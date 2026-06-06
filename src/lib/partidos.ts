@@ -5,10 +5,10 @@ import { Partido } from '@/types';
 export const PARTIDOS_GRUPOS: Partido[] = [
   // ── GRUPO A ──
   { id: 'G01', fase: 'grupos', grupo: 'A', local: 'México',       visitante: 'Sudáfrica',   fecha: '2026-06-11T15:00', sede: 'Estadio Azteca',         ciudad: 'Ciudad de México', jugado: false },
-  { id: 'G02', fase: 'grupos', grupo: 'A', local: 'Corea del Sur',visitante: 'Chequia',     fecha: '2026-06-11T22:00', sede: 'Estadio Akron',           ciudad: 'Guadalajara',      jugado: false },
-  { id: 'G03', fase: 'grupos', grupo: 'A', local: 'Chequia',      visitante: 'Sudáfrica',   fecha: '2026-06-18T12:00', sede: 'Mercedes-Benz Stadium',  ciudad: 'Atlanta',          jugado: false },
+  { id: 'G02', fase: 'grupos', grupo: 'A', local: 'Corea del Sur',visitante: 'Rep. Checa',     fecha: '2026-06-11T22:00', sede: 'Estadio Akron',           ciudad: 'Guadalajara',      jugado: false },
+  { id: 'G03', fase: 'grupos', grupo: 'A', local: 'Rep. Checa',      visitante: 'Sudáfrica',   fecha: '2026-06-18T12:00', sede: 'Mercedes-Benz Stadium',  ciudad: 'Atlanta',          jugado: false },
   { id: 'G04', fase: 'grupos', grupo: 'A', local: 'México',       visitante: 'Corea del Sur',fecha:'2026-06-18T21:00', sede: 'Estadio Akron',           ciudad: 'Guadalajara',      jugado: false },
-  { id: 'G05', fase: 'grupos', grupo: 'A', local: 'Chequia',      visitante: 'México',      fecha: '2026-06-24T21:00', sede: 'Estadio Azteca',         ciudad: 'Ciudad de México', jugado: false },
+  { id: 'G05', fase: 'grupos', grupo: 'A', local: 'Rep. Checa',      visitante: 'México',      fecha: '2026-06-24T21:00', sede: 'Estadio Azteca',         ciudad: 'Ciudad de México', jugado: false },
   { id: 'G06', fase: 'grupos', grupo: 'A', local: 'Sudáfrica',    visitante: 'Corea del Sur',fecha:'2026-06-24T21:00', sede: 'Estadio BBVA',            ciudad: 'Monterrey',        jugado: false },
 
   // ── GRUPO B ──
