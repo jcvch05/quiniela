@@ -29,75 +29,64 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+const ADMIN_PWD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'vilaseca2026';
+
 export default function DashboardPage() {
-  const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
   const [data, setData] = useState<DashData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(REFRESH / 1000);
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
 
-  const fetchData = useCallback(async (pwd?: string) => {
-    const p = pwd ?? password;
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/dashboard', { headers: { 'x-admin-password': p }, cache: 'no-store' });
-      if (res.status === 401) { setError('Contraseña incorrecta'); return; }
+      const res = await fetch('/api/dashboard', { headers: { 'x-admin-password': ADMIN_PWD }, cache: 'no-store' });
+      if (!res.ok) { setError('Error al cargar datos'); return; }
       const json = await res.json();
       setData(json);
-      setAuthed(true);
       setCountdown(REFRESH / 1000);
       setError('');
     } catch { setError('Error de conexión'); }
     finally { setLoading(false); }
-  }, [password]);
+  }, []);
 
   useEffect(() => {
-    if (!authed) return;
+    fetchData();
     const iv = setInterval(() => fetchData(), REFRESH);
     return () => clearInterval(iv);
-  }, [authed, fetchData]);
+  }, [fetchData]);
 
   useEffect(() => {
-    if (!authed) return;
     const tick = setInterval(() => setCountdown(c => c <= 1 ? REFRESH / 1000 : c - 1), 1000);
     return () => clearInterval(tick);
-  }, [authed]);
+  }, []);
 
   async function togglePago(id: string, pagado: boolean) {
     await fetch('/api/admin', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PWD },
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();
   }
 
-  if (!authed) {
-    return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-        <form onSubmit={e => { e.preventDefault(); fetchData(password); }}
-          className="bg-white/5 border border-white/10 rounded-2xl p-8 w-full max-w-sm space-y-4">
-          <div className="text-center">
-            <div className="text-4xl mb-2">📊</div>
-            <h1 className="text-2xl font-black">Dashboard Admin</h1>
-            <p className="text-gray-400 text-sm">Quiniela Vilaseca 2026</p>
-          </div>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Contraseña" autoFocus
-            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400" />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button type="submit" disabled={loading}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-3 rounded-xl">
-            {loading ? 'Entrando...' : 'Entrar →'}
-          </button>
-        </form>
-      </main>
-    );
-  }
+  if (loading && !data) return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-4xl mb-3 animate-pulse">📊</div>
+        <p className="text-gray-400">Cargando dashboard...</p>
+      </div>
+    </main>
+  );
 
-  if (!data) return <main className="min-h-screen bg-black text-white flex items-center justify-center"><p className="text-gray-400">Cargando...</p></main>;
+  if (error && !data) return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center">
+      <p className="text-red-400">{error}</p>
+    </main>
+  );
+
+  if (!data) return null;
 
   const { stats, emails, sistema, participantes } = data;
   const premios = { p1: Math.round(stats.pozo_bs * 0.6), p2: Math.round(stats.pozo_bs * 0.25), p3: Math.round(stats.pozo_bs * 0.15) };
