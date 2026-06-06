@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = 'Quiniela Vilaseca <quiniela@resend.dev>';
+const FROM = 'Quiniela Vilaseca <onboarding@resend.dev>';
 
 function plantillaFase1(nombre: string, especiales: Record<string, unknown>, partidos: Record<string, { golesLocal: number; golesVisitante: number }>) {
   const semis = (especiales.semifinalistas as string[]) ?? [];
