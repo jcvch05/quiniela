@@ -39,14 +39,15 @@ const TERCER = { id: 'T01', local: 'Perdedor S01', visitante: 'Perdedor S02', fe
 const FINAL = { id: 'F01', local: 'Ganador S01', visitante: 'Ganador S02', fecha: '2026-07-12', jugado: false };
 
 function formatFecha(fecha: string) {
-  const d = new Date(fecha + 'T12:00:00');
+  const soloFecha = fecha.includes('T') ? fecha.split('T')[0] : fecha;
+  const d = new Date(soloFecha + 'T12:00:00');
   return d.toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 function formatHora(fecha: string) {
-  const d = new Date(fecha);
-  if (isNaN(d.getTime()) || !fecha.includes('T')) return '';
-  return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  if (!fecha.includes('T')) return '';
+  // Hora directa del string = hora Bolivia (BOT)
+  return fecha.split('T')[1] + ' BOT';
 }
 
 function PartidoCard({ local, visitante, fecha, jugado, golesLocal, golesVisitante, grande = false }: {
