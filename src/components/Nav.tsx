@@ -6,11 +6,12 @@ import { useState, useEffect } from 'react';
 import { getSession, clearSession } from '@/lib/authService';
 
 const links = [
-  { href: '/',         label: '🏠 Inicio' },
-  { href: '/registro', label: '📝 Inscripción' },
-  { href: '/tabla',    label: '🏆 Posiciones' },
-  { href: '/fixture',  label: '📅 Fixture' },
-  { href: '/reglas',   label: '📋 Reglas' },
+  { href: '/',             label: '🏠 Inicio' },
+  { href: '/registro',     label: '📝 Inscripción' },
+  { href: '/pronosticos',  label: '🎯 Pronósticos' },
+  { href: '/tabla',        label: '🏆 Posiciones' },
+  { href: '/fixture',      label: '📅 Fixture' },
+  { href: '/reglas',       label: '📋 Reglas' },
 ];
 
 export default function Nav() {
