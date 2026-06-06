@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 
 interface Participante {
   id: string;
@@ -133,8 +134,90 @@ export default function AdminPage() {
             ))}
           </div>
         </div>
+
+        {/* Cargar resultados */}
+        <CargarResultados password={password} />
       </div>
     </main>
+  );
+}
+
+function CargarResultados({ password }: { password: string }) {
+  const [partidoId, setPartidoId] = useState('');
+  const [gl, setGl] = useState('0');
+  const [gv, setGv] = useState('0');
+  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await fetch('/api/resultados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ partidoId, golesLocal: parseInt(gl), golesVisitante: parseInt(gv) }),
+      });
+      if (res.ok) {
+        setMsg('✅ Resultado guardado y puntos recalculados');
+        setPartidoId('');
+        setGl('0');
+        setGv('0');
+      } else {
+        setMsg('❌ Error al guardar');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const partido = PARTIDOS_GRUPOS.find(p => p.id === partidoId);
+
+  return (
+    <div className="mt-10 bg-white/5 border border-white/10 rounded-2xl p-6">
+      <h2 className="text-lg font-bold text-yellow-400 mb-4">⚽ Cargar Resultado de Partido</h2>
+      <form onSubmit={guardar} className="space-y-4">
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">Partido</label>
+          <select value={partidoId} onChange={e => setPartidoId(e.target.value)}
+            className="w-full bg-green-950 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-400">
+            <option value="">Selecciona un partido...</option>
+            {PARTIDOS_GRUPOS.map(p => (
+              <option key={p.id} value={p.id}>
+                Grupo {p.grupo} · {p.local} vs {p.visitante}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {partido && (
+          <div className="flex items-center gap-4">
+            <div className="flex-1 text-right">
+              <p className="text-sm font-semibold">{partido.local}</p>
+              <input type="number" min="0" max="20" value={gl} onChange={e => setGl(e.target.value)}
+                className="w-20 mt-1 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white text-xl font-black focus:outline-none focus:border-yellow-400 ml-auto block" />
+            </div>
+            <span className="text-gray-500 font-black text-xl">-</span>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold">{partido.visitante}</p>
+              <input type="number" min="0" max="20" value={gv} onChange={e => setGv(e.target.value)}
+                className="w-20 mt-1 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white text-xl font-black focus:outline-none focus:border-yellow-400" />
+            </div>
+          </div>
+        )}
+
+        {msg && <p className="text-sm text-center">{msg}</p>}
+
+        <button type="submit" disabled={!partidoId || loading}
+          className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl transition-colors">
+          {loading ? 'Guardando y recalculando...' : 'Guardar resultado'}
+        </button>
+      </form>
+      <p className="text-xs text-gray-500 mt-3 text-center">
+        Al guardar, se recalculan automáticamente los puntos de todos los participantes y se actualiza la tabla.
+      </p>
+    </div>
   );
 }
 
