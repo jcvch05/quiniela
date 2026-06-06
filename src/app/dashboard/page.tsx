@@ -31,7 +31,6 @@ function formatTime(iso: string) {
 
 // La contraseña nunca llega al navegador — el fetch usa una cookie de sesión
 // El servidor valida que el uid del cookie corresponda al admin
-const ADMIN_PWD = 'vilaseca2026'; // solo para la API interna del server
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
@@ -43,7 +42,7 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/dashboard', { headers: { 'x-admin-password': ADMIN_PWD }, cache: 'no-store' });
+      const res = await fetch('/api/dashboard', { cache: 'no-store' });
       if (!res.ok) { setError('Error al cargar datos'); return; }
       const json = await res.json();
       setData(json);
@@ -67,7 +66,7 @@ export default function DashboardPage() {
   async function togglePago(id: string, pagado: boolean) {
     await fetch('/api/admin', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PWD },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();

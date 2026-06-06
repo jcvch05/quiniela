@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/firebase';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
-
 export async function GET(req: NextRequest) {
-  if (req.headers.get('x-admin-password') !== ADMIN_PASSWORD)
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  // El middleware ya verifica que el usuario esté logueado
+  // Solo verificamos que venga con cookie de sesión
+  const token = req.cookies.get('auth_token')?.value;
+  if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const start = Date.now();
 
