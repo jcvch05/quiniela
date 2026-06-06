@@ -6,6 +6,7 @@ import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 import { SELECCIONES } from '@/types';
 import { getSession } from '@/lib/authService';
 import { getDocument } from '@/lib/firebase';
+import ContadorGoles from '@/components/ContadorGoles';
 
 // Deadlines en hora Bolivia
 const DEADLINES = {
@@ -173,6 +174,15 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
   const [grupoActivo, setGrupoActivo] = useState('A');
   const abierta = faseAbierta('fase1');
 
+  // Contadores de goles por partido
+  const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(
+    Object.fromEntries(PARTIDOS_GRUPOS.map(p => [p.id, { local: 0, visitante: 0 }]))
+  );
+
+  function setGol(id: string, lado: 'local' | 'visitante', val: number) {
+    setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
+  }
+
   const gruposByLetter = PARTIDOS_GRUPOS.reduce<Record<string, typeof PARTIDOS_GRUPOS>>((acc, p) => {
     const g = p.grupo ?? 'X';
     if (!acc[g]) acc[g] = [];
@@ -186,8 +196,8 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
       const pronosticosGrupos: Record<string, { golesLocal: number; golesVisitante: number }> = {};
       for (const p of PARTIDOS_GRUPOS) {
         pronosticosGrupos[p.id] = {
-          golesLocal: parseInt(data[`${p.id}_local`] ?? '0'),
-          golesVisitante: parseInt(data[`${p.id}_visitante`] ?? '0'),
+          golesLocal: goles[p.id]?.local ?? 0,
+          golesVisitante: goles[p.id]?.visitante ?? 0,
         };
       }
       const especiales = {
@@ -284,15 +294,19 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
         <div className="space-y-3">
           {(gruposByLetter[grupoActivo] ?? []).map(partido => (
             <div key={partido.id} className="bg-white/5 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-2">📍 {partido.sede}, {partido.ciudad}</p>
+              <p className="text-xs text-gray-400 mb-3">📍 {partido.sede}, {partido.ciudad}</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold flex-1 text-right">{partido.local}</span>
-                <input {...register(`${partido.id}_local`)} type="number" min="0" max="20" defaultValue="0"
-                  className="w-14 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white focus:outline-none focus:border-yellow-400" />
-                <span className="text-gray-500 font-bold">-</span>
-                <input {...register(`${partido.id}_visitante`)} type="number" min="0" max="20" defaultValue="0"
-                  className="w-14 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white focus:outline-none focus:border-yellow-400" />
-                <span className="text-sm font-semibold flex-1">{partido.visitante}</span>
+                <span className="text-sm font-semibold flex-1 text-right leading-tight">{partido.local}</span>
+                <ContadorGoles
+                  value={goles[partido.id]?.local ?? 0}
+                  onChange={v => setGol(partido.id, 'local', v)}
+                />
+                <span className="text-gray-500 font-black text-lg">-</span>
+                <ContadorGoles
+                  value={goles[partido.id]?.visitante ?? 0}
+                  onChange={v => setGol(partido.id, 'visitante', v)}
+                />
+                <span className="text-sm font-semibold flex-1 leading-tight">{partido.visitante}</span>
               </div>
             </div>
           ))}
