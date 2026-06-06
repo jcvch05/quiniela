@@ -29,7 +29,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-const ADMIN_PWD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'vilaseca2026';
+const ADMIN_PWD = 'vilaseca2026';
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);

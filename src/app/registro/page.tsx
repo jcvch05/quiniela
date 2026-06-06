@@ -20,7 +20,7 @@ export default function RegistroPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!telefono.trim()) { setError('El teléfono es obligatorio'); return; }
+    // teléfono opcional
     setLoading(true); setError('');
     try {
       const res = await fetch('/api/registro', {
@@ -93,7 +93,7 @@ export default function RegistroPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">WhatsApp / Teléfono *</label>
+            <label className="block text-sm text-gray-300 mb-1">WhatsApp / Teléfono <span className="text-gray-500">(opcional)</span></label>
             <input value={telefono} onChange={e => setTelefono(e.target.value)}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
               placeholder="+591 7XXXXXXX" />
