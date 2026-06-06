@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 import { SELECCIONES } from '@/types';
+import { getSession } from '@/lib/authService';
 
 interface FormData {
   nombre: string;
@@ -25,6 +26,11 @@ export default function RegistroPage() {
   const [step, setStep] = useState<Step>('pago');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [session, setSession] = useState<{ uid: string; name: string; token: string } | null>(null);
+
+  useEffect(() => {
+    setSession(getSession());
+  }, []);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
 
@@ -41,7 +47,8 @@ export default function RegistroPage() {
       }
 
       const payload = {
-        nombre: data.nombre,
+        uid: session?.uid,
+        nombre: data.nombre || session?.name,
         telefono: data.telefono,
         email: data.email,
         pronosticosEspeciales: {
