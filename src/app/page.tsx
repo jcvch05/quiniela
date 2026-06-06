@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const SELECCIONES = [
   '🇦🇷','🇧🇷','🇫🇷','🇩🇪','🇪🇸','🇵🇹','🇬🇧','🇮🇹','🇳🇱','🇺🇾',
@@ -55,13 +56,20 @@ export default function Home() {
             ⚽ FIFA World Cup 2026™ · 11 junio – 19 julio
           </div>
 
-          {/* Mascota / pelota animada */}
+          {/* Logo oficial del Mundial 2026 */}
           <div className="relative mb-6">
-            <div className="text-[100px] md:text-[140px] leading-none drop-shadow-2xl" style={{ filter: 'drop-shadow(0 0 40px rgba(250,204,21,0.3))' }}>
-              🏆
+            <div style={{ filter: 'drop-shadow(0 0 40px rgba(250,204,21,0.4))' }}>
+              <Image
+                src="/copa-mundial.png"
+                alt="FIFA World Cup 2026 Official Emblem"
+                width={220}
+                height={340}
+                className="mx-auto"
+                priority
+              />
             </div>
-            <div className="absolute -top-2 -right-4 text-4xl animate-bounce">⚽</div>
-            <div className="absolute -bottom-2 -left-4 text-3xl animate-pulse">⭐</div>
+            <div className="absolute top-2 -right-6 text-4xl animate-bounce">⚽</div>
+            <div className="absolute bottom-4 -left-6 text-3xl animate-pulse">⭐</div>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-3 leading-none">
