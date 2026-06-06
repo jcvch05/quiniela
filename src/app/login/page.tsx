@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, signUp, saveSession } from '@/lib/authService';
 import { Suspense } from 'react';
@@ -15,8 +15,17 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  function cambiarModo(m: 'login' | 'signup') {
+    setModo(m);
+    setError('');
+    setPassword('');
+    setConfirm('');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,9 +33,12 @@ function LoginForm() {
 
     if (modo === 'signup') {
       if (!nombre.trim()) { setError('Ingresá tu nombre'); return; }
-      if (password !== confirm) { setError('Las contraseñas no coinciden'); return; }
       if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
+      if (password !== confirm) { setError('Las contraseñas no coinciden'); return; }
     }
+
+    if (!email.trim()) { setError('Ingresá tu email'); return; }
+    if (!password) { setError('Ingresá tu contraseña'); return; }
 
     setLoading(true);
     try {
@@ -37,8 +49,8 @@ function LoginForm() {
       saveSession(user);
       router.push(redirect);
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error inesperado');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
       setLoading(false);
     }
@@ -53,15 +65,14 @@ function LoginForm() {
         <p className="text-green-300 font-semibold">Familia Vilaseca</p>
       </div>
 
-      {/* Card */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        {/* Tabs login/signup */}
+        {/* Tabs */}
         <div className="flex rounded-xl overflow-hidden border border-white/10 mb-6">
-          <button onClick={() => { setModo('login'); setError(''); }}
+          <button type="button" onClick={() => cambiarModo('login')}
             className={`flex-1 py-2.5 text-sm font-bold transition-colors ${modo === 'login' ? 'bg-yellow-400 text-black' : 'text-gray-400 hover:text-white'}`}>
             Iniciar sesión
           </button>
-          <button onClick={() => { setModo('signup'); setError(''); }}
+          <button type="button" onClick={() => cambiarModo('signup')}
             className={`flex-1 py-2.5 text-sm font-bold transition-colors ${modo === 'signup' ? 'bg-yellow-400 text-black' : 'text-gray-400 hover:text-white'}`}>
             Crear cuenta
           </button>
@@ -74,6 +85,7 @@ function LoginForm() {
               <input
                 value={nombre} onChange={e => setNombre(e.target.value)}
                 placeholder="Juan Vilaseca"
+                autoComplete="name"
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
               />
             </div>
@@ -84,39 +96,67 @@ function LoginForm() {
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="juan@email.com"
+              autoComplete="email"
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
             />
           </div>
 
           <div>
             <label className="block text-sm text-gray-300 mb-1">Contraseña</label>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
-            />
+            <div className="relative">
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
+              />
+              <button type="button" onClick={() => setShowPass(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-lg px-1">
+                {showPass ? '🙈' : '👁️'}
+              </button>
+            </div>
+            {modo === 'signup' && (
+              <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
+            )}
           </div>
 
           {modo === 'signup' && (
             <div>
               <label className="block text-sm text-gray-300 mb-1">Confirmar contraseña</label>
-              <input
-                type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirm} onChange={e => setConfirm(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
+                />
+                <button type="button" onClick={() => setShowConfirm(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-lg px-1">
+                  {showConfirm ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {/* Indicador en tiempo real de coincidencia */}
+              {confirm.length > 0 && (
+                <p className={`text-xs mt-1 ${password === confirm ? 'text-green-400' : 'text-red-400'}`}>
+                  {password === confirm ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+                </p>
+              )}
             </div>
           )}
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm px-4 py-3 rounded-xl">
-              {error}
+              ⚠️ {error}
             </div>
           )}
 
           <button type="submit" disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 disabled:opacity-50 text-black font-black py-3.5 rounded-xl transition-all text-lg">
-            {loading ? 'Cargando...' : modo === 'login' ? 'Entrar →' : 'Crear cuenta →'}
+            className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 disabled:opacity-50 text-black font-black py-3.5 rounded-xl transition-all text-lg mt-2">
+            {loading
+              ? '⏳ Cargando...'
+              : modo === 'login' ? 'Entrar →' : 'Crear cuenta →'}
           </button>
         </form>
       </div>
