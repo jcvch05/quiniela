@@ -121,16 +121,16 @@ export default function RegistroPage() {
               Escanea el QR con tu app bancaria y paga <span className="text-yellow-400 font-bold">50 Bs</span>.
               Luego continúa con tu registro.
             </p>
-            <div className="bg-white rounded-xl p-4 inline-block mb-6">
-              {/* Placeholder QR — reemplazar con imagen real */}
-              <div className="w-48 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm font-mono">
-                QR E-BISA<br/>50 Bs
-              </div>
+            <div className="bg-white rounded-xl p-3 inline-block mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/qr-pago.png" alt="QR Banco BISA - Pago 50 Bs" className="w-52 h-52 object-contain" />
             </div>
-            <p className="text-xs text-gray-500 mb-6">
-              Cuenta: Banco BISA · Titular: Familia Vilaseca<br/>
-              Una vez realizado el pago, continúa con el formulario.
-            </p>
+            <div className="text-xs text-gray-400 mb-6 space-y-1">
+              <p>🏦 <strong className="text-white">Banco BISA</strong> · Cuenta: 0286514014</p>
+              <p>👤 Beneficiario: VILASECA CHUMACERO JUAN CARLOS MARIO</p>
+              <p>📝 Motivo: Quiniela Vilaseca · 💰 Monto: <strong className="text-yellow-400">BOB 50.00</strong></p>
+              <p className="text-gray-500 mt-2">Una vez realizado el pago, continúa con el formulario.</p>
+            </div>
             <button
               onClick={() => setStep('datos')}
               className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 py-3 rounded-xl transition-colors"
