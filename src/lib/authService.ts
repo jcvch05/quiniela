@@ -77,6 +77,7 @@ export function saveSession(user: AuthUser) {
   document.cookie = `auth_token=${user.idToken}; expires=${expires}; path=/; SameSite=Strict`;
   document.cookie = `auth_uid=${user.uid}; expires=${expires}; path=/; SameSite=Strict`;
   document.cookie = `auth_name=${encodeURIComponent(user.displayName ?? user.email)}; expires=${expires}; path=/; SameSite=Strict`;
+  document.cookie = `auth_email=${encodeURIComponent(user.email)}; expires=${expires}; path=/; SameSite=Strict`;
 }
 
 export function clearSession() {
@@ -86,13 +87,17 @@ export function clearSession() {
   document.cookie = 'auth_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 }
 
-export function getSession(): { uid: string; name: string; token: string } | null {
+export function getSession(): { uid: string; name: string; token: string; email: string } | null {
   if (typeof document === 'undefined') return null;
-  const cookies = Object.fromEntries(document.cookie.split('; ').map(c => c.split('=')));
+  const cookies = Object.fromEntries(document.cookie.split('; ').map(c => {
+    const [k, ...v] = c.split('=');
+    return [k, v.join('=')];
+  }));
   if (!cookies.auth_token || !cookies.auth_uid) return null;
   return {
     token: cookies.auth_token,
     uid: cookies.auth_uid,
     name: decodeURIComponent(cookies.auth_name ?? ''),
+    email: decodeURIComponent(cookies.auth_email ?? ''),
   };
 }

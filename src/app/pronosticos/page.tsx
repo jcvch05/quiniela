@@ -48,7 +48,7 @@ async function enviarEmail(fase: string, email: string, nombre: string, datos: u
 
 export default function PronosticosPage() {
   const [faseActiva, setFaseActiva] = useState<Fase>('fase1');
-  const [session, setSession] = useState<{ uid: string; name: string; token: string } | null>(null);
+  const [session, setSession] = useState<{ uid: string; name: string; token: string; email: string } | null>(null);
   const [participante, setParticipante] = useState<Record<string, unknown> | null>(null);
   const [enviado, setEnviado] = useState<Partial<Record<Fase, boolean>>>({});
   const [loading, setLoading] = useState(true);
@@ -162,7 +162,7 @@ export default function PronosticosPage() {
 
 // ─── Fase 1: Especiales + Grupos ─────────────────────────────────────────────
 function Fase1({ session, participante, yaEnviado, onEnviado }: {
-  session: { uid: string; name: string; token: string };
+  session: { uid: string; name: string; token: string; email: string };
   participante: Record<string, unknown> | null;
   yaEnviado: boolean;
   onEnviado: () => void;
@@ -203,7 +203,7 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
           uid: session.uid,
           nombre: participante?.nombre ?? session.name,
           telefono: participante?.telefono ?? '',
-          email: participante?.email ?? '',
+          email: session.email,
           pronosticosEspeciales: especiales,
           pronosticosGrupos,
         }),
@@ -211,7 +211,7 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
       if (!res.ok) throw new Error('Error al guardar');
 
       // Email de confirmación
-      await enviarEmail('fase1', participante?.email as string ?? '', session.name, {
+      await enviarEmail('fase1', session.email, session.name, {
         especiales, grupos: pronosticosGrupos,
       });
 
@@ -313,7 +313,7 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
 // ─── Fases eliminatorias ──────────────────────────────────────────────────────
 function FaseElim({ fase, label, cantidad, instruccion, session, participante, yaEnviado, onEnviado }: {
   fase: Fase; label: string; cantidad: number; instruccion: string;
-  session: { uid: string; name: string; token: string };
+  session: { uid: string; name: string; token: string; email: string };
   participante: Record<string, unknown> | null;
   yaEnviado: boolean;
   onEnviado: () => void;
@@ -357,7 +357,7 @@ function FaseElim({ fase, label, cantidad, instruccion, session, participante, y
         });
       }
 
-      await enviarEmail(fase, participante?.email as string ?? '', session.name, { equipos: seleccionados });
+      await enviarEmail(fase, session.email, session.name, { equipos: seleccionados });
       onEnviado();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error');
