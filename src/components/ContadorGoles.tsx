@@ -14,8 +14,10 @@ export default function ContadorGoles({ value, onChange }: Props) {
       min={0}
       max={20}
       value={value}
+      onFocus={e => e.target.select()}
       onChange={e => {
-        const n = parseInt(e.target.value);
+        const raw = e.target.value.replace(/^0+/, '') || '0';
+        const n = parseInt(raw);
         if (!isNaN(n) && n >= 0 && n <= 20) onChange(n);
         else if (e.target.value === '') onChange(0);
       }}
