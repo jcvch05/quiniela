@@ -125,12 +125,7 @@ export default function RegistroPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/qr-pago.png" alt="QR Banco BISA - Pago 50 Bs" className="w-52 h-52 object-contain" />
             </div>
-            <div className="text-xs text-gray-400 mb-6 space-y-1">
-              <p>🏦 <strong className="text-white">Banco BISA</strong> · Cuenta: 0286514014</p>
-              <p>👤 Beneficiario: VILASECA CHUMACERO JUAN CARLOS MARIO</p>
-              <p>📝 Motivo: Quiniela Vilaseca · 💰 Monto: <strong className="text-yellow-400">BOB 50.00</strong></p>
-              <p className="text-gray-500 mt-2">Una vez realizado el pago, continúa con el formulario.</p>
-            </div>
+            <p className="text-gray-500 text-sm mb-6">Una vez realizado el pago, continúa con el formulario.</p>
             <button
               onClick={() => setStep('datos')}
               className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 py-3 rounded-xl transition-colors"
