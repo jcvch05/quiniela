@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Participantes: cualquiera puede leer (tabla pública), nadie escribe directo
+    // (las escrituras van por el servidor Next.js, no desde el browser)
+    match /participantes/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Resultados: solo lectura pública
+    match /resultados/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Logs de email: nadie los lee/escribe desde el browser
+    match /logs_email/{id} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Todo lo demás: denegado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

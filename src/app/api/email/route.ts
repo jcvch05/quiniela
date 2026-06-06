@@ -65,10 +65,18 @@ async function logEmail(to: string, nombre: string, fase: string, ok: boolean, e
   } catch { /* log no crítico */ }
 }
 
+const FASES_VALIDAS = ['fase1', 'octavos', 'cuartos', 'semis'];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
   try {
     const { to, nombre, fase, datos } = await req.json();
     if (!to || !fase) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
+
+    // Validaciones básicas
+    if (!EMAIL_REGEX.test(to)) return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
+    if (!FASES_VALIDAS.includes(fase)) return NextResponse.json({ error: 'Fase inválida' }, { status: 400 });
+    if (typeof nombre !== 'string' || nombre.length > 200) return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
 
     if (!process.env.RESEND_API_KEY) {
       await logEmail(to, nombre, fase, false, 'RESEND_API_KEY no configurada');

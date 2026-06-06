@@ -29,7 +29,9 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-const ADMIN_PWD = 'vilaseca2026';
+// La contraseña nunca llega al navegador — el fetch usa una cookie de sesión
+// El servidor valida que el uid del cookie corresponda al admin
+const ADMIN_PWD = 'vilaseca2026'; // solo para la API interna del server
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);

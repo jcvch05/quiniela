@@ -13,7 +13,13 @@ export async function POST(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { partidoId, golesLocal, golesVisitante } = await req.json();
-  if (!partidoId) return NextResponse.json({ error: 'partidoId requerido' }, { status: 400 });
+  if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
+    return NextResponse.json({ error: 'partidoId inválido' }, { status: 400 });
+  }
+  const gl = Number(golesLocal), gv = Number(golesVisitante);
+  if (isNaN(gl) || isNaN(gv) || gl < 0 || gl > 20 || gv < 0 || gv > 20) {
+    return NextResponse.json({ error: 'Marcador inválido (0-20)' }, { status: 400 });
+  }
 
   // Guardar resultado en Firestore
   try {
