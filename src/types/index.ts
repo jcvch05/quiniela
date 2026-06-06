@@ -53,12 +53,30 @@ export interface Partido {
   jugado: boolean;
 }
 
+// Los 48 clasificados al Mundial 2026 (extraídos del fixture oficial)
 export const SELECCIONES = [
-  'Argentina', 'Australia', 'Brasil', 'Canadá', 'Chile', 'Colombia',
-  'Croacia', 'Dinamarca', 'Ecuador', 'España', 'Estados Unidos', 'Francia',
-  'Inglaterra', 'Italia', 'Japón', 'Marruecos', 'México', 'Nigeria',
-  'Países Bajos', 'Polonia', 'Portugal', 'Senegal', 'Serbia', 'Suiza',
-  'Turquía', 'Uruguay', 'Alemania', 'Bélgica', 'Costa Rica', 'Ghana',
-  'Irán', 'Arabia Saudita', 'Corea del Sur', 'Camerún', 'Qatar', 'Bolivia',
-  'Venezuela', 'Perú', 'Paraguay', 'Panamá',
+  // Grupo A
+  'México', 'Sudáfrica', 'Corea del Sur', 'Rep. Checa',
+  // Grupo B
+  'Canadá', 'Bosnia-Herz.', 'Qatar', 'Suiza',
+  // Grupo C
+  'Brasil', 'Marruecos', 'Haití', 'Escocia',
+  // Grupo D
+  'EE.UU.', 'Paraguay', 'Australia', 'Turquía',
+  // Grupo E
+  'Alemania', 'Curazao', 'Costa de Marfil', 'Ecuador',
+  // Grupo F
+  'Países Bajos', 'Japón', 'Suecia', 'Túnez',
+  // Grupo G
+  'Bélgica', 'Egipto', 'Irán', 'Nueva Zelanda',
+  // Grupo H
+  'España', 'Cabo Verde', 'Arabia Saudita', 'Uruguay',
+  // Grupo I
+  'Francia', 'Senegal', 'Iraq', 'Noruega',
+  // Grupo J
+  'Argentina', 'Argelia', 'Austria', 'Jordania',
+  // Grupo K
+  'Portugal', 'R.D. Congo', 'Uzbekistán', 'Colombia',
+  // Grupo L
+  'Inglaterra', 'Croacia', 'Ghana', 'Panamá',
 ].sort();
