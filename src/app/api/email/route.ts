@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { createDocument } from '@/lib/firebase';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = 'Quiniela Vilaseca <onboarding@resend.dev>';
@@ -16,9 +17,7 @@ function plantillaFase1(nombre: string, especiales: Record<string, unknown>, par
         <h1 style="color:#facc15;font-size:28px;margin:0">⚽ Quiniela Mundialista 2026</h1>
         <p style="color:#86efac;margin:4px 0">Familia Vilaseca</p>
       </div>
-
-      <p style="font-size:16px">Hola <strong>${nombre}</strong>, tus pronósticos de <strong>Fase 1</strong> fueron registrados correctamente.</p>
-
+      <p style="font-size:16px">Hola <strong>${nombre}</strong>, tus pronósticos de <strong>Fase 1</strong> fueron registrados.</p>
       <div style="background:#1a2e1a;border:1px solid #166534;border-radius:12px;padding:20px;margin:20px 0">
         <h2 style="color:#4ade80;margin:0 0 16px">⭐ Pronósticos Especiales</h2>
         <table style="width:100%;border-collapse:collapse">
@@ -28,42 +27,42 @@ function plantillaFase1(nombre: string, especiales: Record<string, unknown>, par
           <tr><td style="color:#9ca3af;padding:6px 0">⚽ Máx. Goleador</td><td style="font-weight:bold">${especiales.maxGoleador}</td></tr>
         </table>
       </div>
-
       <div style="background:#1a1a2e;border:1px solid #1e3a5f;border-radius:12px;padding:20px;margin:20px 0">
-        <h2 style="color:#60a5fa;margin:0 0 12px">📊 Partidos de Grupos (primeros 10)</h2>
+        <h2 style="color:#60a5fa;margin:0 0 12px">📊 Primeros 10 partidos pronosticados</h2>
         <pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;margin:0">${resumen}</pre>
-        <p style="color:#6b7280;font-size:12px;margin:8px 0 0">...y ${Object.keys(partidos).length - 10} partidos más</p>
+        <p style="color:#6b7280;font-size:12px;margin:8px 0 0">...y ${Math.max(0, Object.keys(partidos).length - 10)} partidos más guardados</p>
       </div>
-
-      <p style="color:#6b7280;font-size:12px;text-align:center;margin-top:24px">
-        Una vez confirmado tu pago, quedas oficialmente inscrito.<br/>
-        ¡Buena suerte! 🍀
-      </p>
-    </div>
-  `;
+      <p style="color:#6b7280;font-size:12px;text-align:center;margin-top:24px">¡Buena suerte! 🍀</p>
+    </div>`;
 }
 
 function plantillaFaseElim(nombre: string, fase: string, equipos: string[]) {
   const iconos: Record<string, string> = { octavos: '⚔️', cuartos: '🔥', semis: '🌟' };
+  const labels: Record<string, string> = { octavos: 'Octavos de Final', cuartos: 'Cuartos de Final', semis: 'Semifinales' };
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:16px">
       <div style="text-align:center;margin-bottom:24px">
         <h1 style="color:#facc15;font-size:28px;margin:0">⚽ Quiniela Mundialista 2026</h1>
         <p style="color:#86efac;margin:4px 0">Familia Vilaseca</p>
       </div>
-
-      <p style="font-size:16px">Hola <strong>${nombre}</strong>, tus pronósticos de <strong>${iconos[fase] ?? ''} ${fase.charAt(0).toUpperCase() + fase.slice(1)}</strong> fueron registrados.</p>
-
+      <p style="font-size:16px">Hola <strong>${nombre}</strong>, tus pronósticos de <strong>${iconos[fase] ?? ''} ${labels[fase] ?? fase}</strong> fueron registrados.</p>
       <div style="background:#1a2e1a;border:1px solid #166534;border-radius:12px;padding:20px;margin:20px 0">
-        <h2 style="color:#4ade80;margin:0 0 16px">Equipos pronosticados</h2>
+        <h2 style="color:#4ade80;margin:0 0 16px">Equipos seleccionados</h2>
         <ol style="margin:0;padding-left:20px">
           ${equipos.map(e => `<li style="padding:6px 0;font-weight:bold">${e}</li>`).join('')}
         </ol>
       </div>
-
       <p style="color:#6b7280;font-size:12px;text-align:center;margin-top:24px">¡Buena suerte! 🍀</p>
-    </div>
-  `;
+    </div>`;
+}
+
+async function logEmail(to: string, nombre: string, fase: string, ok: boolean, error?: string) {
+  try {
+    await createDocument('logs_email', `${Date.now()}-${to.split('@')[0]}`, {
+      to, nombre, fase, ok, error: error ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  } catch { /* log no crítico */ }
 }
 
 export async function POST(req: NextRequest) {
@@ -72,25 +71,31 @@ export async function POST(req: NextRequest) {
     if (!to || !fase) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
 
     if (!process.env.RESEND_API_KEY) {
-      console.log('RESEND_API_KEY no configurada, email omitido');
+      await logEmail(to, nombre, fase, false, 'RESEND_API_KEY no configurada');
       return NextResponse.json({ ok: true, skipped: true });
     }
 
     let html = '';
     let subject = '';
+    const labels: Record<string, string> = { fase1: 'Fase 1 – Grupos', octavos: 'Octavos', cuartos: 'Cuartos', semis: 'Semis' };
 
     if (fase === 'fase1') {
       subject = '✅ Tus pronósticos Fase 1 - Quiniela Vilaseca 2026';
       html = plantillaFase1(nombre, datos.especiales, datos.grupos);
     } else {
-      subject = `✅ Tus pronósticos ${fase} - Quiniela Vilaseca 2026`;
+      subject = `✅ Tus pronósticos ${labels[fase] ?? fase} - Quiniela Vilaseca 2026`;
       html = plantillaFaseElim(nombre, fase, datos.equipos);
     }
 
     await resend.emails.send({ from: FROM, to, subject, html });
+    await logEmail(to, nombre, fase, true);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'Error enviando email' }, { status: 500 });
+    const msg = e instanceof Error ? e.message : 'Error desconocido';
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      await logEmail(body.to ?? '?', body.nombre ?? '?', body.fase ?? '?', false, msg);
+    } catch { /* ignore */ }
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
