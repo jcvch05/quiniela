@@ -46,6 +46,8 @@ export interface Partido {
   local: string;
   visitante: string;
   fecha: string;
+  sede?: string;
+  ciudad?: string;
   golesLocal?: number;
   golesVisitante?: number;
   jugado: boolean;

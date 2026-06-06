@@ -50,13 +50,14 @@ function formatHora(fecha: string) {
   return fecha.split('T')[1] + ' BOT';
 }
 
-function PartidoCard({ local, visitante, fecha, jugado, golesLocal, golesVisitante, grande = false }: {
+function PartidoCard({ local, visitante, fecha, jugado, golesLocal, golesVisitante, sede, ciudad, grande = false }: {
   local: string; visitante: string; fecha: string;
-  jugado: boolean; golesLocal?: number; golesVisitante?: number; grande?: boolean;
+  jugado: boolean; golesLocal?: number; golesVisitante?: number;
+  sede?: string; ciudad?: string; grande?: boolean;
 }) {
   return (
     <div className={`rounded-2xl border p-4 md:p-5 ${jugado ? 'bg-white/10 border-green-600/40' : 'bg-white/5 border-white/10'}`}>
-      <div className={`flex items-center gap-3 md:gap-5 ${grande ? 'gap-4' : ''}`}>
+      <div className={`flex items-center gap-3 md:gap-5`}>
         <span className={`flex-1 text-right font-bold ${grande ? 'text-xl md:text-2xl' : 'text-base md:text-lg'}`}>{local}</span>
         <div className="text-center min-w-[72px] md:min-w-[90px]">
           {jugado ? (
@@ -69,10 +70,15 @@ function PartidoCard({ local, visitante, fecha, jugado, golesLocal, golesVisitan
         </div>
         <span className={`flex-1 text-left font-bold ${grande ? 'text-xl md:text-2xl' : 'text-base md:text-lg'}`}>{visitante}</span>
       </div>
-      <p className="text-center mt-2 text-sm text-gray-400 capitalize">
-        {formatFecha(fecha)}{fecha.includes('T') ? ` · ${formatHora(fecha)}` : ''}
-        {jugado && <span className="ml-2 text-green-400 font-semibold">✓ Finalizado</span>}
-      </p>
+      <div className="text-center mt-2 space-y-0.5">
+        <p className="text-sm text-gray-300 capitalize font-medium">
+          {formatFecha(fecha)}{fecha.includes('T') ? ` · ${formatHora(fecha)}` : ''}
+          {jugado && <span className="ml-2 text-green-400 font-semibold">✓ Finalizado</span>}
+        </p>
+        {(sede || ciudad) && (
+          <p className="text-xs text-gray-500">📍 {sede}{ciudad ? `, ${ciudad}` : ''}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -126,7 +132,8 @@ export default function FixturePage() {
               {(gruposByLetter[grupoActivo] ?? []).map(p => (
                 <PartidoCard key={p.id} local={p.local} visitante={p.visitante}
                   fecha={p.fecha} jugado={p.jugado}
-                  golesLocal={p.golesLocal} golesVisitante={p.golesVisitante} />
+                  golesLocal={p.golesLocal} golesVisitante={p.golesVisitante}
+                  sede={p.sede} ciudad={p.ciudad} />
               ))}
             </div>
           </>
