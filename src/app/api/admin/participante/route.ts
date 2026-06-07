@@ -13,8 +13,22 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 
-  const res = await fetch(`${FIREBASE_BASE}/participantes/${id}`, { method: 'DELETE' });
-  if (!res.ok) return NextResponse.json({ error: 'Error al borrar' }, { status: 500 });
+  // Usar el token del admin para autenticar contra Firestore
+  const token = req.cookies.get('auth_token')?.value;
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${FIREBASE_BASE}/participantes/${id}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('Firestore delete error:', res.status, err);
+    return NextResponse.json({ error: `Error Firestore: ${res.status}` }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
