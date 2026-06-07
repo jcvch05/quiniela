@@ -27,6 +27,14 @@ const FASES = [
 
 const GRUPOS_LETRAS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
+// Pre-calculado fuera del componente para usarlo en el state init
+const gruposByLetterStatic = PARTIDOS_GRUPOS.reduce<Record<string, typeof PARTIDOS_GRUPOS>>((acc, p) => {
+  const g = p.grupo ?? 'X';
+  if (!acc[g]) acc[g] = [];
+  acc[g].push(p);
+  return acc;
+}, {});
+
 // Equipos reales por grupo para las fases eliminatorias
 const TODOS_EQUIPOS = Array.from(new Set(PARTIDOS_GRUPOS.flatMap(p => [p.local, p.visitante]))).sort();
 
@@ -172,7 +180,16 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [grupoActivo, setGrupoActivo] = useState('A');
+  const [gruposVisitados, setGruposVisitados] = useState<Set<string>>(new Set(['A']));
   const abierta = faseAbierta('fase1');
+
+  const todosLosGrupos = GRUPOS_LETRAS.filter(g => gruposByLetterStatic[g]);
+  const todosVisitados = todosLosGrupos.every(g => gruposVisitados.has(g));
+
+  function irAGrupo(g: string) {
+    setGrupoActivo(g);
+    setGruposVisitados(prev => new Set([...prev, g]));
+  }
 
   // Contadores de goles por partido
   const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(
@@ -183,12 +200,7 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
     setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
   }
 
-  const gruposByLetter = PARTIDOS_GRUPOS.reduce<Record<string, typeof PARTIDOS_GRUPOS>>((acc, p) => {
-    const g = p.grupo ?? 'X';
-    if (!acc[g]) acc[g] = [];
-    acc[g].push(p);
-    return acc;
-  }, {});
+  const gruposByLetter = gruposByLetterStatic;
 
   async function onSubmit(data: FormFase1) {
     setLoading(true); setError('');
@@ -278,14 +290,43 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
 
       {/* Grupos */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-        <h2 className="text-lg font-black text-green-400 mb-4">🗓️ Fase de Grupos</h2>
+        <h2 className="text-lg font-black text-green-400 mb-2">🗓️ Fase de Grupos</h2>
+
+        {/* Explicación */}
+        <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl px-4 py-3 mb-4 text-sm text-blue-200">
+          ⚠️ <strong>Debés revisar y completar todos los grupos (A al L)</strong> antes de poder enviar. Tocá cada letra, ingresá tus marcadores y al final habilitará el botón de enviar.
+        </div>
+
+        {/* Progreso */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-gray-400">Grupos revisados:</span>
+          <span className={`text-sm font-black ${todosVisitados ? 'text-green-400' : 'text-yellow-400'}`}>
+            {gruposVisitados.size}/{todosLosGrupos.length}
+            {todosVisitados && ' ✓'}
+          </span>
+        </div>
+
+        {/* Barra de progreso */}
+        <div className="w-full bg-white/10 rounded-full h-2 mb-4">
+          <div className="bg-green-400 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(gruposVisitados.size / todosLosGrupos.length) * 100}%` }} />
+        </div>
 
         {/* Selector de grupo */}
         <div className="flex flex-wrap gap-2 mb-5">
           {GRUPOS_LETRAS.filter(g => gruposByLetter[g]).map(g => (
-            <button type="button" key={g} onClick={() => setGrupoActivo(g)}
-              className={`w-10 h-10 rounded-lg font-black text-sm transition-colors ${grupoActivo === g ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}>
+            <button type="button" key={g} onClick={() => irAGrupo(g)}
+              className={`w-10 h-10 rounded-lg font-black text-sm transition-colors relative ${
+                grupoActivo === g
+                  ? 'bg-yellow-400 text-black'
+                  : gruposVisitados.has(g)
+                  ? 'bg-green-700/60 text-green-300 border border-green-600/40'
+                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              }`}>
               {g}
+              {gruposVisitados.has(g) && grupoActivo !== g && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full text-[8px] flex items-center justify-center">✓</span>
+              )}
             </button>
           ))}
         </div>
@@ -315,9 +356,19 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
 
       {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
-      <button type="submit" disabled={loading}
-        className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 disabled:opacity-50 text-black font-black py-4 rounded-2xl text-lg transition-all">
-        {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos Fase 1'}
+      {!todosVisitados && (
+        <div className="bg-orange-900/30 border border-orange-700/40 rounded-xl px-4 py-3 text-sm text-orange-300 text-center">
+          🔒 Faltan grupos por revisar: {todosLosGrupos.filter(g => !gruposVisitados.has(g)).join(', ')}
+        </div>
+      )}
+
+      <button type="submit" disabled={loading || !todosVisitados}
+        className={`w-full font-black py-4 rounded-2xl text-lg transition-all ${
+          todosVisitados
+            ? 'bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black'
+            : 'bg-white/10 text-gray-500 cursor-not-allowed'
+        } disabled:opacity-60`}>
+        {loading ? '⏳ Guardando...' : todosVisitados ? '✅ Enviar pronósticos Fase 1' : `🔒 Completá todos los grupos primero (${gruposVisitados.size}/${todosLosGrupos.length})`}
       </button>
       <p className="text-xs text-gray-500 text-center">Recibirás un email con tus pronósticos al enviar.</p>
     </form>
