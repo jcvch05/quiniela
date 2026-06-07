@@ -39,10 +39,13 @@ export default function DashboardPage() {
   const [countdown, setCountdown] = useState(REFRESH / 1000);
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
 
+  const HEADERS = { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' };
+  const OPTS = { credentials: 'include' as const };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/dashboard', { cache: 'no-store' });
+      const res = await fetch('/api/dashboard', { ...OPTS, cache: 'no-store' });
       if (!res.ok) { setError('Error al cargar datos'); return; }
       const json = await res.json();
       setData(json);
@@ -65,21 +68,22 @@ export default function DashboardPage() {
 
   async function togglePago(id: string, pagado: boolean) {
     await fetch('/api/admin', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' },
+      ...OPTS, method: 'PATCH',
+      headers: HEADERS,
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();
   }
 
   async function borrarParticipante(id: string, nombre: string) {
-    if (!confirm(`¿Borrar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
-    await fetch('/api/admin/participante', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' },
+    if (!confirm(`¿Borrar a "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
+    const res = await fetch('/api/admin/participante', {
+      ...OPTS, method: 'DELETE',
+      headers: HEADERS,
       body: JSON.stringify({ id }),
     });
-    fetchData();
+    if (!res.ok) alert('Error al borrar. Intenta de nuevo.');
+    else fetchData();
   }
 
   if (loading && !data) return (
