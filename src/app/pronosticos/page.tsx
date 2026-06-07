@@ -56,12 +56,16 @@ function formatDeadline(d: Date) {
 
 async function enviarEmail(fase: string, email: string, nombre: string, datos: unknown) {
   try {
-    await fetch('/api/email', {
+    const res = await fetch('/api/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // enviar cookies de sesión
       body: JSON.stringify({ to: email, nombre, fase, datos }),
     });
-  } catch { /* email opcional */ }
+    if (!res.ok) console.error('Email error:', res.status, await res.text());
+  } catch (e) {
+    console.error('Email fetch error:', e);
+  }
 }
 
 export default function PronosticosPage() {
