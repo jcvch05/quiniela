@@ -46,7 +46,13 @@ function LoginForm() {
         ? await signIn(email, password)
         : await signUp(email, password, nombre);
 
-      saveSession(user);
+      // Guardar sesión via servidor (cookie HttpOnly + SameSite=Lax)
+      await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: user.idToken, uid: user.uid, name: user.displayName ?? user.email, email: user.email }),
+      });
+
       router.push(redirect);
       router.refresh();
     } catch (err) {

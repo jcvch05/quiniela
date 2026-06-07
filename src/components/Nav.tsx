@@ -25,7 +25,8 @@ export default function Nav() {
     if (session) setUserName(session.name);
   }, [pathname]);
 
-  function logout() {
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
     clearSession();
     router.push('/login');
   }

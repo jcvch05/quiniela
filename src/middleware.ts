@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Rutas completamente públicas (sin login)
 const PUBLIC_PATHS = [
   '/login',
+  '/api/auth/',                // login y logout
   '/api/participantes',        // tabla pública de posiciones
   '/api/resultados-publicos',  // fixture público
 ];
