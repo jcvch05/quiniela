@@ -66,7 +66,7 @@ export default function DashboardPage() {
   async function togglePago(id: string, pagado: boolean) {
     await fetch('/api/admin', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' },
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();
@@ -158,7 +158,27 @@ export default function DashboardPage() {
         {/* Tab: Overview */}
         {tab === 'overview' && (
           <div className="space-y-4">
-            <h2 className="font-bold text-lg">Participantes recientes</h2>
+            {/* Pendientes de pago destacados */}
+            {participantes.filter(p => !p.pagado).length > 0 && (
+              <div className="bg-orange-900/30 border border-orange-700/40 rounded-2xl p-4">
+                <h2 className="font-bold text-orange-400 mb-3">⏳ Pendientes de confirmar pago ({participantes.filter(p => !p.pagado).length})</h2>
+                <div className="space-y-2">
+                  {participantes.filter(p => !p.pagado).map(p => (
+                    <div key={p.id} className="flex items-center gap-3 bg-black/20 rounded-xl px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold truncate">{p.nombre}</p>
+                        <p className="text-xs text-gray-400">{p.telefono} · {timeAgo(p.fechaRegistro)}</p>
+                      </div>
+                      <button onClick={() => togglePago(p.id, p.pagado)}
+                        className="bg-green-500/20 hover:bg-green-500/40 text-green-400 font-bold text-sm px-4 py-2 rounded-xl transition-colors whitespace-nowrap">
+                        ✅ Confirmar pago
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <h2 className="font-bold text-lg">Todos los participantes</h2>
             <div className="space-y-2">
               {participantes.slice(0, 5).map(p => (
                 <div key={p.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex items-center gap-4">
