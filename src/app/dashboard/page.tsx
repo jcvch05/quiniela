@@ -72,6 +72,16 @@ export default function DashboardPage() {
     fetchData();
   }
 
+  async function borrarParticipante(id: string, nombre: string) {
+    if (!confirm(`¿Borrar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    await fetch('/api/admin/participante', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' },
+      body: JSON.stringify({ id }),
+    });
+    fetchData();
+  }
+
   if (loading && !data) return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center">
@@ -245,10 +255,19 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 text-gray-300 hidden md:table-cell text-xs">{p.campeon}</td>
                       <td className="px-4 py-3 text-center font-black text-yellow-400">{p.puntos}</td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => togglePago(p.id, p.pagado)}
-                          className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${p.pagado ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'}`}>
-                          {p.pagado ? 'Revertir' : 'Confirmar'}
-                        </button>
+                        <div className="flex gap-1 justify-center">
+                          <button onClick={() => togglePago(p.id, p.pagado)}
+                            className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${p.pagado ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'}`}>
+                            {p.pagado ? 'Revertir' : 'Confirmar'}
+                          </button>
+                          {/* Solo mostrar borrar si no tiene pronósticos (F1 vacío) */}
+                          {!p.fases.f1 && (
+                            <button onClick={() => borrarParticipante(p.id, p.nombre)}
+                              className="text-xs px-2 py-1 rounded-lg font-semibold bg-red-900/40 hover:bg-red-900/60 text-red-400 transition-colors">
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
