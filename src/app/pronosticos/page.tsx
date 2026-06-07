@@ -247,21 +247,41 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
   }
 
   const prev = participante?.pronosticosEspeciales as Record<string, unknown> | undefined;
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
+
+  async function reenviarEmail() {
+    setReenviando(true);
+    try {
+      await enviarEmail('fase1', session.email, session.name, {
+        especiales: participante?.pronosticosEspeciales,
+        grupos: participante?.pronosticosGrupos,
+      });
+      setReenviado(true);
+      setTimeout(() => setReenviado(false), 4000);
+    } finally {
+      setReenviando(false);
+    }
+  }
 
   if (yaEnviado) {
     return (
       <div className="bg-green-900/30 border border-green-600/40 rounded-2xl p-6 text-center">
         <div className="text-5xl mb-3">✅</div>
         <h2 className="text-xl font-black text-green-400 mb-2">¡Fase 1 enviada!</h2>
-        <p className="text-gray-300 mb-4">Tus pronósticos de grupos y especiales están guardados. Revisá tu email.</p>
+        <p className="text-gray-300 mb-4">Tus pronósticos están guardados.</p>
         {prev && (
-          <div className="text-left bg-black/20 rounded-xl p-4 text-sm space-y-1">
+          <div className="text-left bg-black/20 rounded-xl p-4 text-sm space-y-1 mb-5">
             <p>🏆 Campeón: <strong>{conBandera(prev.campeon as string)}</strong></p>
             <p>🥈 Subcampeón: <strong>{conBandera(prev.subcampeon as string)}</strong></p>
             <p>⭐ Semis: <strong>{(prev.semifinalistas as string[])?.map(conBandera).join(', ')}</strong></p>
             <p>⚽ Goleador: <strong>{prev.maxGoleador as string}</strong></p>
           </div>
         )}
+        <button onClick={reenviarEmail} disabled={reenviando}
+          className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+          {reenviando ? '⏳ Enviando...' : reenviado ? '✅ Email enviado a ' + session.email : '📧 Reenviar email con mis pronósticos'}
+        </button>
       </div>
     );
   }
