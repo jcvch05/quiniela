@@ -21,8 +21,20 @@ export default function Nav() {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    const session = getSession();
-    if (session) setUserName(session.name);
+    // Intentar del servidor primero, luego fallback a cookies del cliente
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(({ user }) => {
+        if (user?.name) setUserName(user.name);
+        else {
+          const s = getSession();
+          if (s?.name) setUserName(s.name);
+        }
+      })
+      .catch(() => {
+        const s = getSession();
+        if (s?.name) setUserName(s.name);
+      });
   }, [pathname]);
 
   async function logout() {

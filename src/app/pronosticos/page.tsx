@@ -5,6 +5,14 @@ import { useForm } from 'react-hook-form';
 import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 import { SELECCIONES } from '@/types';
 import { getSession } from '@/lib/authService';
+
+async function fetchSession() {
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const { user } = await res.json();
+    return user;
+  } catch { return null; }
+}
 import { getDocument } from '@/lib/firebase';
 import ContadorGoles from '@/components/ContadorGoles';
 import { bandera, conBandera } from '@/lib/banderas';
@@ -64,26 +72,26 @@ export default function PronosticosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const s = getSession();
-    setSession(s);
-    if (s?.uid) {
-      getDocument('participantes', s.uid)
-        .then(p => {
-          setParticipante(p as Record<string, unknown>);
-          // Detectar qué fases ya tiene guardadas
-          const env: Partial<Record<Fase, boolean>> = {};
-          const pp = p as Record<string, unknown>;
-          if (pp.pronosticosGrupos && Object.keys(pp.pronosticosGrupos as object).length > 0) env.fase1 = true;
-          if (pp.octavos && (pp.octavos as string[]).length > 0) env.octavos = true;
-          if (pp.cuartos && (pp.cuartos as string[]).length > 0) env.cuartos = true;
-          if (pp.semis && (pp.semis as string[]).length > 0) env.semis = true;
-          setEnviado(env);
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    async function init() {
+      // Obtener sesión: primero del servidor (HttpOnly), luego del cliente (fallback)
+      const serverSession = await fetchSession();
+      const s = serverSession ?? getSession();
+      if (!s?.uid) { setLoading(false); return; }
+      setSession(s);
+      try {
+        const p = await getDocument('participantes', s.uid);
+        setParticipante(p as Record<string, unknown>);
+        const pp = p as Record<string, unknown>;
+        const env: Partial<Record<Fase, boolean>> = {};
+        if (pp.pronosticosGrupos && Object.keys(pp.pronosticosGrupos as object).length > 0) env.fase1 = true;
+        if (pp.octavos && (pp.octavos as string[]).length > 0) env.octavos = true;
+        if (pp.cuartos && (pp.cuartos as string[]).length > 0) env.cuartos = true;
+        if (pp.semis && (pp.semis as string[]).length > 0) env.semis = true;
+        setEnviado(env);
+      } catch { /* sin datos aún */ }
+      finally { setLoading(false); }
     }
+    init();
   }, []);
 
   if (loading) return <Cargando />;
