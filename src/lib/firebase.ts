@@ -1,10 +1,13 @@
 const FIREBASE_BASE = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 
-async function firestoreRequest(path: string, method = 'GET', body?: object) {
+async function firestoreRequest(path: string, method = 'GET', body?: object, token?: string) {
   const url = `${FIREBASE_BASE}/${path}`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
@@ -58,30 +61,30 @@ function docToObject(doc: { name: string; fields: Record<string, Record<string, 
   return obj;
 }
 
-export async function getCollection(collection: string) {
-  const data = await firestoreRequest(collection);
+export async function getCollection(collection: string, token?: string) {
+  const data = await firestoreRequest(collection, 'GET', undefined, token);
   if (!data.documents) return [];
   return data.documents.map(docToObject);
 }
 
-export async function getDocument(collection: string, id: string) {
-  const doc = await firestoreRequest(`${collection}/${id}`);
+export async function getDocument(collection: string, id: string, token?: string) {
+  const doc = await firestoreRequest(`${collection}/${id}`, 'GET', undefined, token);
   return docToObject(doc);
 }
 
-export async function createDocument(collection: string, id: string, data: Record<string, unknown>) {
+export async function createDocument(collection: string, id: string, data: Record<string, unknown>, token?: string) {
   const fields: Record<string, object> = {};
   for (const [k, v] of Object.entries(data)) {
     fields[k] = toFirestoreValue(v);
   }
-  return firestoreRequest(`${collection}?documentId=${id}`, 'POST', { fields });
+  return firestoreRequest(`${collection}?documentId=${id}`, 'POST', { fields }, token);
 }
 
-export async function updateDocument(collection: string, id: string, data: Record<string, unknown>) {
+export async function updateDocument(collection: string, id: string, data: Record<string, unknown>, token?: string) {
   const fields: Record<string, object> = {};
   for (const [k, v] of Object.entries(data)) {
     fields[k] = toFirestoreValue(v);
   }
   const updateMask = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join('&');
-  return firestoreRequest(`${collection}/${id}?${updateMask}`, 'PATCH', { fields });
+  return firestoreRequest(`${collection}/${id}?${updateMask}`, 'PATCH', { fields }, token);
 }

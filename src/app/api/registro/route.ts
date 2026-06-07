@@ -5,26 +5,19 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   try {
+    const token = req.cookies.get('auth_token')?.value;
     const body = await req.json();
     const { uid, nombre, telefono, email, pronosticosEspeciales, pronosticosGrupos } = body;
 
-    // Validaciones
-    if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 100) {
+    if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 100)
       return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
-    }
-    if (email && !EMAIL_REGEX.test(email)) {
+    if (email && !EMAIL_REGEX.test(email))
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
-    }
-    if (uid && typeof uid !== 'string') {
-      return NextResponse.json({ error: 'UID inválido' }, { status: 400 });
-    }
 
-    // Validar goles (0-20)
     if (pronosticosGrupos && typeof pronosticosGrupos === 'object') {
       for (const val of Object.values(pronosticosGrupos) as { golesLocal: number; golesVisitante: number }[]) {
-        if (val.golesLocal < 0 || val.golesLocal > 20 || val.golesVisitante < 0 || val.golesVisitante > 20) {
+        if (val.golesLocal < 0 || val.golesLocal > 20 || val.golesVisitante < 0 || val.golesVisitante > 20)
           return NextResponse.json({ error: 'Marcador inválido' }, { status: 400 });
-        }
       }
     }
 
@@ -44,16 +37,15 @@ export async function POST(req: NextRequest) {
     };
 
     try {
-      const existing = await getDocument('participantes', docId) as Record<string, unknown>;
-      // Preservar puntos y estado de pago si ya existe
+      const existing = await getDocument('participantes', docId, token) as Record<string, unknown>;
       await updateDocument('participantes', docId, {
         ...data,
         pagado: existing.pagado ?? false,
         puntos: existing.puntos ?? 0,
         desglose: existing.desglose ?? data.desglose,
-      });
+      }, token);
     } catch {
-      await createDocument('participantes', docId, data);
+      await createDocument('participantes', docId, data, token);
     }
 
     return NextResponse.json({ ok: true, id: docId });
