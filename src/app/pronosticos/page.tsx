@@ -7,6 +7,7 @@ import { SELECCIONES } from '@/types';
 import { getSession } from '@/lib/authService';
 import { getDocument } from '@/lib/firebase';
 import ContadorGoles from '@/components/ContadorGoles';
+import { bandera, conBandera } from '@/lib/banderas';
 
 // Deadlines en hora Bolivia
 const DEADLINES = {
@@ -255,9 +256,9 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
         <p className="text-gray-300 mb-4">Tus pronósticos de grupos y especiales están guardados. Revisá tu email.</p>
         {prev && (
           <div className="text-left bg-black/20 rounded-xl p-4 text-sm space-y-1">
-            <p>🏆 Campeón: <strong>{prev.campeon as string}</strong></p>
-            <p>🥈 Subcampeón: <strong>{prev.subcampeon as string}</strong></p>
-            <p>⭐ Semis: <strong>{(prev.semifinalistas as string[])?.join(', ')}</strong></p>
+            <p>🏆 Campeón: <strong>{conBandera(prev.campeon as string)}</strong></p>
+            <p>🥈 Subcampeón: <strong>{conBandera(prev.subcampeon as string)}</strong></p>
+            <p>⭐ Semis: <strong>{(prev.semifinalistas as string[])?.map(conBandera).join(', ')}</strong></p>
             <p>⚽ Goleador: <strong>{prev.maxGoleador as string}</strong></p>
           </div>
         )}
@@ -337,7 +338,9 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
             <div key={partido.id} className="bg-white/5 rounded-xl p-3">
               <p className="text-xs text-gray-400 mb-3">📍 {partido.sede}, {partido.ciudad}</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold flex-1 text-right leading-tight">{partido.local}</span>
+                <span className="text-sm font-semibold flex-1 text-right leading-tight">
+                  {bandera(partido.local)} {partido.local}
+                </span>
                 <ContadorGoles
                   value={goles[partido.id]?.local ?? 0}
                   onChange={v => setGol(partido.id, 'local', v)}
@@ -347,7 +350,9 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
                   value={goles[partido.id]?.visitante ?? 0}
                   onChange={v => setGol(partido.id, 'visitante', v)}
                 />
-                <span className="text-sm font-semibold flex-1 leading-tight">{partido.visitante}</span>
+                <span className="text-sm font-semibold flex-1 leading-tight">
+                  {partido.visitante} {bandera(partido.visitante)}
+                </span>
               </div>
             </div>
           ))}
@@ -441,7 +446,7 @@ function FaseElim({ fase, label, cantidad, instruccion, session, participante, y
         </div>
         <div className="grid grid-cols-2 gap-2 mt-4">
           {previos.map(e => (
-            <div key={e} className="bg-green-800/30 border border-green-600/30 rounded-xl px-3 py-2 text-sm font-semibold">✓ {e}</div>
+            <div key={e} className="bg-green-800/30 border border-green-600/30 rounded-xl px-3 py-2 text-sm font-semibold">✓ {bandera(e)} {e}</div>
           ))}
         </div>
       </div>
@@ -470,7 +475,7 @@ function FaseElim({ fase, label, cantidad, instruccion, session, participante, y
                   lleno ? 'bg-white/3 border border-white/5 text-gray-600 cursor-not-allowed' :
                   'bg-white/10 border border-white/10 text-gray-300 hover:bg-white/20'
                 }`}>
-                {sel && '✓ '}{equipo}
+                {sel && '✓ '}{bandera(equipo)} {equipo}
               </button>
             );
           })}
@@ -530,7 +535,7 @@ function SelectEquipo({ label, name, register, errors }: {
       <select {...register(name, { required: true })}
         className="w-full bg-green-950 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-400">
         <option value="">Seleccioná una selección...</option>
-        {SELECCIONES.map(s => <option key={s} value={s}>{s}</option>)}
+        {SELECCIONES.map(s => <option key={s} value={s}>{conBandera(s)}</option>)}
       </select>
       {errors[name] && <p className="text-red-400 text-xs mt-1">Obligatorio</p>}
     </div>
