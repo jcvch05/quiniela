@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
   async function borrarParticipante(id: string, nombre: string) {
     if (!confirm(`¿Borrar a "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
-    const res = await fetch('/api/admin/participante', {
+    const res = await fetch('/api/admin', {
       ...OPTS, method: 'DELETE',
       headers: HEADERS,
       body: JSON.stringify({ id }),
