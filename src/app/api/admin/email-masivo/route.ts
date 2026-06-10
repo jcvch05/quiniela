@@ -81,9 +81,6 @@ async function logEmail(to: string, nombre: string, fase: string, ok: boolean, e
 }
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get('x-admin-password') !== ADMIN_PASSWORD)
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
   if (!process.env.RESEND_API_KEY)
     return NextResponse.json({ error: 'RESEND_API_KEY no configurada' }, { status: 500 });
 
