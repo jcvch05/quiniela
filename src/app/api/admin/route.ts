@@ -25,7 +25,6 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 
