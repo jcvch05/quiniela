@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection, updateDocument, createDocument, getDocument } from '@/lib/firebase';
-import { calcularPuntosPartido } from '@/lib/puntuacion';
-import { Participante, Partido } from '@/types';
+import { recalcularTodos } from '@/lib/recalcularPuntos';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
 
@@ -30,39 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Recalcular puntos de todos los participantes
-  const [participantes, resultados] = await Promise.all([
-    getCollection('participantes'),
-    getCollection('resultados'),
-  ]);
-
-  const resultadosMap = Object.fromEntries(
-    (resultados as Partido[]).map(r => [r.id, r])
-  );
-
-  for (const participante of participantes as Participante[]) {
-    let puntosGrupos = 0;
-    const pronosticos = participante.pronosticosGrupos ?? {};
-    for (const [pId, resultado] of Object.entries(resultadosMap)) {
-      const pron = (pronosticos as Record<string, { golesLocal: number; golesVisitante: number }>)[pId];
-      if (pron) {
-        puntosGrupos += calcularPuntosPartido(pron, { ...resultado, id: pId, fase: 'grupos', local: '', visitante: '', fecha: '', jugado: true });
-      }
-    }
-
-    const totalPuntos = puntosGrupos +
-      (participante.desglose?.octavos ?? 0) +
-      (participante.desglose?.cuartos ?? 0) +
-      (participante.desglose?.semis ?? 0) +
-      (participante.desglose?.especiales ?? 0);
-
-    await updateDocument('participantes', participante.id, {
-      puntos: totalPuntos,
-      desglose: {
-        ...(participante.desglose ?? {}),
-        grupos: puntosGrupos,
-      },
-    });
-  }
+  await recalcularTodos();
 
   return NextResponse.json({ ok: true });
 }
