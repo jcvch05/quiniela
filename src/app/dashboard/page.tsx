@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(REFRESH / 1000);
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
+  const [enviandoMasivo, setEnviandoMasivo] = useState(false);
+  const [resultadoMasivo, setResultadoMasivo] = useState<{ enviados: number; fallidos: number; total: number } | null>(null);
 
   const HEADERS = { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' };
   const OPTS = { credentials: 'include' as const };
@@ -73,6 +75,22 @@ export default function DashboardPage() {
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();
+  }
+
+  async function enviarEmailsMasivo() {
+    if (!confirm(`¿Enviar los pronósticos de todos los participantes con Fase 1 a tu correo?\nEsto puede tardar unos segundos.`)) return;
+    setEnviandoMasivo(true);
+    setResultadoMasivo(null);
+    try {
+      const res = await fetch('/api/admin/email-masivo', {
+        ...OPTS, method: 'POST',
+        headers: HEADERS,
+      });
+      const json = await res.json();
+      if (res.ok) setResultadoMasivo(json);
+      else alert('Error: ' + (json.error ?? 'desconocido'));
+    } catch { alert('Error de conexión'); }
+    finally { setEnviandoMasivo(false); }
   }
 
   async function borrarParticipante(id: string, nombre: string) {
@@ -264,13 +282,10 @@ export default function DashboardPage() {
                             className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${p.pagado ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'}`}>
                             {p.pagado ? 'Revertir' : 'Confirmar'}
                           </button>
-                          {/* Solo mostrar borrar si no tiene pronósticos (F1 vacío) */}
-                          {!p.fases.f1 && (
-                            <button onClick={() => borrarParticipante(p.id, p.nombre)}
-                              className="text-xs px-2 py-1 rounded-lg font-semibold bg-red-900/40 hover:bg-red-900/60 text-red-400 transition-colors">
-                              🗑️
-                            </button>
-                          )}
+                          <button onClick={() => borrarParticipante(p.id, p.nombre)}
+                            className="text-xs px-2 py-1 rounded-lg font-semibold bg-red-900/40 hover:bg-red-900/60 text-red-400 transition-colors">
+                            🗑️
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -340,6 +355,21 @@ export default function DashboardPage() {
                 detail={`${emails.enviados_ok} enviados · ${emails.fallidos} errores`}
                 icon="✉️"
               />
+            </div>
+
+            <div className="bg-gray-900 border border-white/10 rounded-2xl p-5">
+              <h2 className="font-bold mb-3">📧 Envío masivo de pronósticos</h2>
+              <p className="text-sm text-gray-400 mb-4">Envía los pronósticos de Fase 1 de todos los participantes a tu correo para que los reenvíes manualmente.</p>
+              <button onClick={enviarEmailsMasivo} disabled={enviandoMasivo}
+                className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-bold px-6 py-3 rounded-xl transition-colors">
+                {enviandoMasivo ? '⏳ Enviando...' : '📤 Enviar todos los pronósticos a mi correo'}
+              </button>
+              {resultadoMasivo && (
+                <div className="mt-4 text-sm">
+                  <p className="text-green-400 font-semibold">✅ Enviados: {resultadoMasivo.enviados} / {resultadoMasivo.total}</p>
+                  {resultadoMasivo.fallidos > 0 && <p className="text-red-400">❌ Fallidos: {resultadoMasivo.fallidos}</p>}
+                </div>
+              )}
             </div>
 
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-5 space-y-3">

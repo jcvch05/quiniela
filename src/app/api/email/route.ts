@@ -3,8 +3,9 @@ import { Resend } from 'resend';
 import { createDocument } from '@/lib/firebase';
 import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = 'Quiniela Vilaseca <onboarding@resend.dev>';
+// RESEND_FROM_EMAIL debe ser una dirección de un dominio verificado en Resend.
+// onboarding@resend.dev solo entrega al email del dueño de la cuenta (modo prueba).
+const FROM = process.env.RESEND_FROM_EMAIL ?? 'Quiniela Vilaseca <onboarding@resend.dev>';
 
 const FASES_VALIDAS = ['fase1', 'octavos', 'cuartos', 'semis'];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -177,14 +178,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const labels: Record<string, string> = { fase1: 'Fase 1', octavos: 'Octavos', cuartos: 'Cuartos', semis: 'Semis' };
-    const subject = `✅ Tus pronósticos ${labels[fase] ?? fase} - Quiniela Vilaseca 2026`;
+    const subject = `✅ [${nombre}] Pronósticos ${labels[fase] ?? fase} - Quiniela Vilaseca 2026`;
 
     const html = fase === 'fase1'
       ? plantillaFase1(nombre, datos.especiales, datos.grupos)
       : plantillaFaseElim(nombre, fase, datos.equipos);
 
-    await resend.emails.send({ from: FROM, to, subject, html });
+    // Enviamos al admin para que reenvíe manualmente. El email real del participante va en Reply-To.
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'jcarlos.vilaseca10@gmail.com';
+    await resend.emails.send({ from: FROM, to: ADMIN_EMAIL, replyTo: to, subject, html });
     await logEmail(to, nombre, fase, true);
     return NextResponse.json({ ok: true });
   } catch (e) {
