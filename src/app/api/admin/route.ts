@@ -18,17 +18,23 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  const token = req.cookies.get('auth_token')?.value;
   const { id, ...data } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
-  await updateDocument('participantes', id, data);
+  await updateDocument('participantes', id, data, token);
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(req: NextRequest) {
+  const token = req.cookies.get('auth_token')?.value;
+  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 
-  const res = await fetch(`${FIREBASE_BASE}/participantes/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${FIREBASE_BASE}/participantes/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
   if (!res.ok) {
     const err = await res.text();
     console.error('Firestore delete error:', res.status, err);
