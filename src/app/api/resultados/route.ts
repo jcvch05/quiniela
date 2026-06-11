@@ -9,7 +9,8 @@ function checkAuth(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  const token = req.cookies.get('auth_token')?.value;
+  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { partidoId, golesLocal, golesVisitante } = await req.json();
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
