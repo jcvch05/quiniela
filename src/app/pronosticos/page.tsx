@@ -19,7 +19,7 @@ import { bandera, conBandera } from '@/lib/banderas';
 
 // Deadlines en hora Bolivia
 const DEADLINES = {
-  fase1:  new Date('2026-06-10T23:59:00-04:00'),
+  fase1:  new Date('2026-06-11T14:30:00-04:00'),
   octavos: new Date('2026-06-29T11:00:00-04:00'),
   cuartos: new Date('2026-07-04T11:00:00-04:00'),
   semis:   new Date('2026-07-14T11:00:00-04:00'),
