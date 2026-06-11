@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const token = req.cookies.get('auth_token')?.value;
+  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   const { id, ...data } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
   await updateDocument('participantes', id, data, token);
