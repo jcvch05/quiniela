@@ -65,14 +65,12 @@ export default function HighlightsPage() {
 
                 {/* Video */}
                 {vid && (
-                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${vid}`}
-                      title={`${r.local} vs ${r.visitante}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                  <div className="px-5 py-4 flex items-center gap-4">
+                    <a href={r.video} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm">
+                      <span className="text-xl">▶</span> Ver resumen en YouTube
+                    </a>
+                    <span className="text-xs text-gray-500">Se abre en YouTube</span>
                   </div>
                 )}
               </div>
