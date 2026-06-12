@@ -9,6 +9,7 @@ const links = [
   { href: '/',             label: '🏠 Inicio' },
   { href: '/tabla',        label: '🏆 Posiciones' },
   { href: '/fixture',      label: '📅 Fixture' },
+  { href: '/agenda',       label: '📆 Agenda' },
   { href: '/highlights',   label: '🎬 Resúmenes' },
   { href: '/pronosticos',  label: '🎯 Pronósticos' },
   { href: '/reglas',       label: '📋 Reglas' },
