@@ -88,19 +88,19 @@ export default function Home() {
             Demuestra que eres el mejor pronosticador. Predice los resultados y compite por el pozo.
           </p>
 
-          {/* Deadline badge */}
-          <div className="bg-red-500/20 border border-red-500/40 text-red-300 px-4 py-2 rounded-xl text-sm font-semibold mb-8 inline-flex items-center gap-2">
-            ⏰ Inscripciones cierran el <strong className="text-white">10 de junio de 2026</strong>
+          {/* Inscripciones cerradas */}
+          <div className="bg-gray-800/60 border border-gray-600/40 text-gray-400 px-4 py-2 rounded-xl text-sm font-semibold mb-8 inline-flex items-center gap-2">
+            🔒 Inscripciones cerradas
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/registro"
-              className="bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-10 py-4 rounded-2xl text-xl transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:scale-105">
-              ¡Quiero jugar! ⚽
-            </Link>
             <Link href="/tabla"
-              className="border-2 border-white/20 hover:border-white/50 hover:bg-white/5 text-white font-bold px-10 py-4 rounded-2xl text-xl transition-all">
+              className="bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-10 py-4 rounded-2xl text-xl transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:scale-105">
               Ver posiciones 🏆
+            </Link>
+            <Link href="/fixture"
+              className="border-2 border-white/20 hover:border-white/50 hover:bg-white/5 text-white font-bold px-10 py-4 rounded-2xl text-xl transition-all">
+              Ver fixture ⚽
             </Link>
           </div>
 
@@ -211,10 +211,10 @@ export default function Home() {
           <div className="max-w-md mx-auto bg-gradient-to-b from-green-900/40 to-transparent border border-green-700/40 rounded-3xl p-8">
             <div className="text-6xl mb-4">🚀</div>
             <h3 className="text-2xl font-black mb-2">¿Listo para competir?</h3>
-            <p className="text-gray-400 mb-6 text-sm">Inscribite antes del 10 de junio y demuestra que sabés más de fútbol que el resto de la familia.</p>
-            <Link href="/registro"
+            <p className="text-gray-400 mb-6 text-sm">El mundial ya comenzó. Seguí los resultados y mirá quién va ganando la quiniela.</p>
+            <Link href="/tabla"
               className="block bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-8 py-4 rounded-2xl text-xl transition-all hover:scale-105 shadow-lg shadow-yellow-400/20">
-              Inscribirme ahora ⚽
+              Ver tabla de posiciones 🏆
             </Link>
           </div>
         </section>

@@ -1,10 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { getSession } from '@/lib/authService';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RegistroPage() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/'); }, [router]);
+  return null;
+}
+
+function _RegistroPageDisabled() {
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [loading, setLoading] = useState(false);
