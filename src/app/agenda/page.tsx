@@ -6,8 +6,27 @@ import { Partido } from '@/types';
 
 const REFRESH = 60_000;
 
+const ZONAS = [
+  { id: 'BOT', label: '🇧🇴 Bolivia', offset: -4 },
+  { id: 'LON', label: '🇬🇧 Londres', offset: +1 },
+  { id: 'BRU', label: '🇧🇪 Bruselas', offset: +2 },
+];
+
 function soloFecha(fecha: string) { return fecha.split('T')[0]; }
-function hora(fecha: string) { return fecha.includes('T') ? fecha.split('T')[1] + ' BOT' : ''; }
+
+function horaEnZona(fecha: string, offsetHoras: number): string {
+  if (!fecha.includes('T')) return '';
+  const [datePart, timePart] = fecha.split('T');
+  const [h, m] = timePart.split(':').map(Number);
+  const totalMin = h * 60 + m + (offsetHoras + 4) * 60; // +4 porque BOT es GMT-4
+  const dias = Math.floor(totalMin / (24 * 60));
+  const minutos = ((totalMin % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hh = Math.floor(minutos / 60).toString().padStart(2, '0');
+  const mm = (minutos % 60).toString().padStart(2, '0');
+  const suffix = dias > 0 ? ' +1d' : dias < 0 ? ' -1d' : '';
+  return `${hh}:${mm}${suffix}`;
+}
+
 function labelFecha(fecha: string) {
   const d = new Date(soloFecha(fecha) + 'T12:00:00');
   return d.toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -16,13 +35,11 @@ function labelFechaCorta(fecha: string) {
   const d = new Date(soloFecha(fecha) + 'T12:00:00');
   return d.toLocaleDateString('es-BO', { weekday: 'short', day: 'numeric', month: 'short' });
 }
-
-function hoy() {
-  return new Date().toISOString().split('T')[0];
-}
+function hoy() { return new Date().toISOString().split('T')[0]; }
 
 export default function AgendaPage() {
   const [resultados, setResultados] = useState<Record<string, { golesLocal: number; golesVisitante: number }>>({});
+  const [zona, setZona] = useState(ZONAS[0]);
 
   const fechasDisponibles = useMemo(() => {
     const set = new Set(PARTIDOS_GRUPOS.map(p => soloFecha(p.fecha)));
@@ -66,8 +83,20 @@ export default function AgendaPage() {
     <main className="min-h-screen bg-gradient-to-b from-green-950 to-black text-white py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-black text-yellow-400 mb-1">📆 Agenda</h1>
-          <p className="text-gray-400 text-sm">Partidos por día · Horarios en BOT (GMT-4)</p>
+          <h1 className="text-3xl font-black text-yellow-400 mb-1">🗓️ Agenda</h1>
+          <p className="text-gray-400 text-sm">Partidos por día · Elige tu zona horaria</p>
+        </div>
+
+        {/* Selector de zona horaria */}
+        <div className="flex gap-2 mb-6 justify-center">
+          {ZONAS.map(z => (
+            <button key={z.id} onClick={() => setZona(z)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                zona.id === z.id ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              }`}>
+              {z.label}
+            </button>
+          ))}
         </div>
 
         {/* Selector de fechas */}
@@ -114,7 +143,7 @@ export default function AgendaPage() {
               </div>
               <div className="text-center mt-2 space-y-0.5">
                 <p className="text-sm font-semibold text-yellow-400">
-                  {hora(p.fecha)}
+                  {horaEnZona(p.fecha, zona.offset)} {zona.id}
                   {p.jugado && <span className="text-green-400 ml-2 font-bold">✓ Finalizado</span>}
                 </p>
                 <p className="text-xs text-gray-500">
