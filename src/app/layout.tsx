@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Quiniela Mundialista 2026 · Familia Vilaseca",
   description: "La quiniela oficial del Mundial 2026 de la Familia Vilaseca",
+  icons: {
+    icon: '/copa-mundial.png',
+    apple: '/copa-mundial.png',
+  },
 };
 
 export default function RootLayout({
