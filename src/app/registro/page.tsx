@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { getSession } from '@/lib/authService';
 
 export default function RegistroPage() {
   const router = useRouter();
