@@ -7,10 +7,10 @@ import { getSession, clearSession } from '@/lib/authService';
 
 const links = [
   { href: '/',             label: '🏠 Inicio' },
-  { href: '/registro',     label: '📝 Inscripción' },
-  { href: '/pronosticos',  label: '🎯 Pronósticos' },
   { href: '/tabla',        label: '🏆 Posiciones' },
   { href: '/fixture',      label: '📅 Fixture' },
+  { href: '/highlights',   label: '🎬 Resúmenes' },
+  { href: '/pronosticos',  label: '🎯 Pronósticos' },
   { href: '/reglas',       label: '📋 Reglas' },
 ];
 
