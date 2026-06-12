@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 
 interface DashData {
   timestamp: string;
@@ -384,30 +385,40 @@ export default function DashboardPage() {
             <div className="bg-gray-900 border border-yellow-500/30 rounded-2xl p-5">
               <h2 className="font-bold mb-1">⚽ Cargar resultado de partido</h2>
               <p className="text-sm text-gray-400 mb-4">Ingresa el ID del partido (ej: G01) y el marcador final. Los puntos se recalculan automáticamente.</p>
-              <div className="flex flex-wrap gap-3 items-end">
+              <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">ID Partido</label>
-                  <input value={resultadoForm.partidoId} onChange={e => setResultadoForm(f => ({ ...f, partidoId: e.target.value }))}
-                    placeholder="G01" maxLength={4}
-                    className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-20 text-center font-mono font-bold uppercase" />
+                  <label className="text-xs text-gray-400 block mb-1">Partido</label>
+                  <select value={resultadoForm.partidoId} onChange={e => setResultadoForm(f => ({ ...f, partidoId: e.target.value }))}
+                    className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-full max-w-sm">
+                    <option value="">— Selecciona un partido —</option>
+                    {PARTIDOS_GRUPOS.map(p => (
+                      <option key={p.id} value={p.id}>{p.id}: {p.local} vs {p.visitante}</option>
+                    ))}
+                  </select>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Goles Local</label>
-                  <input value={resultadoForm.golesLocal} onChange={e => setResultadoForm(f => ({ ...f, golesLocal: e.target.value }))}
-                    type="number" min="0" max="20" placeholder="0"
-                    className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-16 text-center font-bold text-lg" />
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">
+                      {resultadoForm.partidoId ? PARTIDOS_GRUPOS.find(p => p.id === resultadoForm.partidoId)?.local ?? 'Local' : 'Local'}
+                    </label>
+                    <input value={resultadoForm.golesLocal} onChange={e => setResultadoForm(f => ({ ...f, golesLocal: e.target.value }))}
+                      type="number" min="0" max="20" placeholder="0"
+                      className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-16 text-center font-bold text-lg" />
+                  </div>
+                  <span className="text-2xl font-black text-gray-400 pb-1">-</span>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">
+                      {resultadoForm.partidoId ? PARTIDOS_GRUPOS.find(p => p.id === resultadoForm.partidoId)?.visitante ?? 'Visitante' : 'Visitante'}
+                    </label>
+                    <input value={resultadoForm.golesVisitante} onChange={e => setResultadoForm(f => ({ ...f, golesVisitante: e.target.value }))}
+                      type="number" min="0" max="20" placeholder="0"
+                      className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-16 text-center font-bold text-lg" />
+                  </div>
+                  <button onClick={guardarResultado} disabled={guardandoResultado || !resultadoForm.partidoId || resultadoForm.golesLocal === '' || resultadoForm.golesVisitante === ''}
+                    className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold px-5 py-2 rounded-xl transition-colors">
+                    {guardandoResultado ? '⏳' : '✅ Guardar'}
+                  </button>
                 </div>
-                <span className="text-2xl font-black text-gray-400 pb-1">-</span>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Goles Visitante</label>
-                  <input value={resultadoForm.golesVisitante} onChange={e => setResultadoForm(f => ({ ...f, golesVisitante: e.target.value }))}
-                    type="number" min="0" max="20" placeholder="0"
-                    className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-16 text-center font-bold text-lg" />
-                </div>
-                <button onClick={guardarResultado} disabled={guardandoResultado || !resultadoForm.partidoId || resultadoForm.golesLocal === '' || resultadoForm.golesVisitante === ''}
-                  className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold px-5 py-2 rounded-xl transition-colors">
-                  {guardandoResultado ? '⏳' : '✅ Guardar'}
-                </button>
               </div>
               {msgResultado && <p className="mt-3 text-sm font-semibold">{msgResultado}</p>}
             </div>
