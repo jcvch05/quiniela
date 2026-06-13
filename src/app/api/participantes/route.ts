@@ -12,6 +12,7 @@ export async function GET() {
         puntos: p.puntos,
         desglose: p.desglose,
         pagado: p.pagado,
+        pronosticosGrupos: p.pronosticosGrupos ?? {},
       }))
       .filter((p: { pagado: unknown }) => p.pagado)
       .sort((a: { puntos: unknown }, b: { puntos: unknown }) => (b.puntos as number) - (a.puntos as number));
