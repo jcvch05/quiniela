@@ -8,12 +8,18 @@ interface Entry {
   nombre: string;
   puntos: number;
   desglose: {
-    grupos: number;
+    grupos: Record<string, number> | number;
     octavos: number;
     cuartos: number;
     semis: number;
     especiales: number;
   };
+}
+
+function sumGrupos(grupos: Record<string, number> | number | undefined): number {
+  if (!grupos) return 0;
+  if (typeof grupos === 'number') return grupos;
+  return Object.values(grupos).reduce((a, b) => a + b, 0);
 }
 
 const REFRESH_INTERVAL = 30_000; // 30 segundos
@@ -101,7 +107,7 @@ export default function TablaPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{entry.nombre}</p>
                   <div className="flex gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
-                    <span>Grupos: <strong className="text-white">{entry.desglose?.grupos ?? 0}</strong></span>
+                    <span>Grupos: <strong className="text-white">{sumGrupos(entry.desglose?.grupos)}</strong></span>
                     <span>Eliminatorias: <strong className="text-white">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>
                     <span>Especiales: <strong className="text-white">{entry.desglose?.especiales ?? 0}</strong></span>
                   </div>
