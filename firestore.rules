@@ -2,22 +2,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Participantes: lectura pública, escritura solo desde servidor autenticado
+    // Participantes: lectura pública, escritura desde servidor (API key) o usuario autenticado
     match /participantes/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if true;
     }
 
-    // Resultados: solo lectura pública
+    // Resultados: lectura pública, escritura desde servidor
     match /resultados/{id} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
 
-    // Logs de email: nadie los lee/escribe desde el browser
+    // Config: lectura/escritura desde servidor (auto-sync)
+    match /config/{id} {
+      allow read, write: if true;
+    }
+
+    // Logs de email: solo desde servidor
     match /logs_email/{id} {
       allow read: if false;
-      allow write: if false;
+      allow write: if true;
     }
 
     // Todo lo demás: denegado

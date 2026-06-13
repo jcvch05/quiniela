@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection, updateDocument } from '@/lib/firebase';
+import { verifyAdmin } from '@/lib/adminAuth';
 
 const FIREBASE_BASE = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
-
-function checkAuth(req: NextRequest) {
-  const auth = req.headers.get('x-admin-password');
-  return auth === ADMIN_PASSWORD;
-}
-
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const participantes = await getCollection('participantes');
   return NextResponse.json(participantes);
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const token = req.cookies.get('auth_token')?.value;
-  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   const { id, ...data } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
   await updateDocument('participantes', id, data, token);
@@ -26,8 +20,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const token = req.cookies.get('auth_token')?.value;
-  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 

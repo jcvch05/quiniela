@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const [guardandoResultado, setGuardandoResultado] = useState(false);
   const [msgResultado, setMsgResultado] = useState('');
 
-  const HEADERS = { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' };
+  const HEADERS = { 'Content-Type': 'application/json' };
   const OPTS = { credentials: 'include' as const };
 
   const fetchData = useCallback(async () => {

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getCollection, createDocument } from '@/lib/firebase';
 import { PARTIDOS_GRUPOS } from '@/lib/partidos';
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
+import { verifyAdmin } from '@/lib/adminAuth';
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Quiniela Vilaseca <onboarding@resend.dev>';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'jcarlos.vilaseca10@gmail.com';
 
@@ -81,6 +80,7 @@ async function logEmail(to: string, nombre: string, fase: string, ok: boolean, e
 }
 
 export async function POST(req: NextRequest) {
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   if (!process.env.RESEND_API_KEY)
     return NextResponse.json({ error: 'RESEND_API_KEY no configurada' }, { status: 500 });
 

@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection, updateDocument, createDocument, getDocument } from '@/lib/firebase';
 import { recalcularTodos } from '@/lib/recalcularPuntos';
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
-
-function checkAuth(req: NextRequest) {
-  return req.headers.get('x-admin-password') === ADMIN_PASSWORD;
-}
+import { verifyAdmin } from '@/lib/adminAuth';
 
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get('auth_token')?.value;
-  if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { partidoId, golesLocal, golesVisitante, video } = await req.json();
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
@@ -36,7 +30,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const resultados = await getCollection('resultados');
   return NextResponse.json(resultados);
 }
