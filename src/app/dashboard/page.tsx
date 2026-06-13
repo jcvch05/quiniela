@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
   const [enviandoMasivo, setEnviandoMasivo] = useState(false);
   const [resultadoMasivo, setResultadoMasivo] = useState<{ enviados: number; fallidos: number; total: number } | null>(null);
-  const [resultadoForm, setResultadoForm] = useState({ partidoId: '', golesLocal: '', golesVisitante: '' });
+  const [resultadoForm, setResultadoForm] = useState({ partidoId: '', golesLocal: '', golesVisitante: '', video: '' });
   const [guardandoResultado, setGuardandoResultado] = useState(false);
   const [msgResultado, setMsgResultado] = useState('');
 
@@ -105,12 +105,12 @@ export default function DashboardPage() {
     const res = await fetch('/api/resultados', {
       ...OPTS, method: 'POST',
       headers: HEADERS,
-      body: JSON.stringify({ partidoId: partidoId.toUpperCase(), golesLocal: Number(golesLocal), golesVisitante: Number(golesVisitante) }),
+      body: JSON.stringify({ partidoId: partidoId.toUpperCase(), golesLocal: Number(golesLocal), golesVisitante: Number(golesVisitante), video: resultadoForm.video || undefined }),
     });
     const json = await res.json();
     if (res.ok) {
       setMsgResultado('✅ Resultado guardado y puntos recalculados');
-      setResultadoForm({ partidoId: '', golesLocal: '', golesVisitante: '' });
+      setResultadoForm({ partidoId: '', golesLocal: '', golesVisitante: '', video: '' });
       fetchData();
     } else {
       setMsgResultado(`❌ Error: ${json.error}`);
@@ -414,6 +414,9 @@ export default function DashboardPage() {
                       type="number" min="0" max="20" placeholder="0"
                       className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-16 text-center font-bold text-lg" />
                   </div>
+                  <input value={resultadoForm.video} onChange={e => setResultadoForm(f => ({ ...f, video: e.target.value }))}
+                    type="url" placeholder="Link YouTube (opcional)"
+                    className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white text-sm w-full" />
                   <button onClick={guardarResultado} disabled={guardandoResultado || !resultadoForm.partidoId || resultadoForm.golesLocal === '' || resultadoForm.golesVisitante === ''}
                     className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold px-5 py-2 rounded-xl transition-colors">
                     {guardandoResultado ? '⏳' : '✅ Guardar'}

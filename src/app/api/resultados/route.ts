@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('auth_token')?.value;
   if (!token) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-  const { partidoId, golesLocal, golesVisitante } = await req.json();
+  const { partidoId, golesLocal, golesVisitante, video } = await req.json();
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
     return NextResponse.json({ error: 'partidoId inválido' }, { status: 400 });
   }
@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
   // Guardar resultado en Firestore
   try {
     await getDocument('resultados', partidoId);
-    await updateDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true });
+    await updateDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true, ...(video ? { video } : {}) });
   } catch {
-    await createDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true });
+    await createDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true, ...(video ? { video } : {}) });
   }
 
   // Recalcular puntos de todos los participantes
