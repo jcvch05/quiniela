@@ -102,20 +102,25 @@ export default function DashboardPage() {
     if (!partidoId || golesLocal === '' || golesVisitante === '') return;
     setGuardandoResultado(true);
     setMsgResultado('');
-    const res = await fetch('/api/resultados', {
-      ...OPTS, method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({ partidoId: partidoId.toUpperCase(), golesLocal: Number(golesLocal), golesVisitante: Number(golesVisitante), video: resultadoForm.video || undefined }),
-    });
-    const json = await res.json();
-    if (res.ok) {
-      setMsgResultado('✅ Resultado guardado y puntos recalculados');
-      setResultadoForm({ partidoId: '', golesLocal: '', golesVisitante: '', video: '' });
-      fetchData();
-    } else {
-      setMsgResultado(`❌ Error: ${json.error}`);
+    try {
+      const res = await fetch('/api/resultados', {
+        ...OPTS, method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify({ partidoId: partidoId.toUpperCase(), golesLocal: Number(golesLocal), golesVisitante: Number(golesVisitante), video: resultadoForm.video || undefined }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setMsgResultado('✅ Resultado guardado y puntos recalculados');
+        setResultadoForm({ partidoId: '', golesLocal: '', golesVisitante: '', video: '' });
+        fetchData();
+      } else {
+        setMsgResultado(`❌ Error: ${json.error ?? res.status}`);
+      }
+    } catch (e) {
+      setMsgResultado(`❌ Error de red: ${e instanceof Error ? e.message : 'desconocido'}`);
+    } finally {
+      setGuardandoResultado(false);
     }
-    setGuardandoResultado(false);
   }
 
   async function borrarParticipante(id: string, nombre: string) {
