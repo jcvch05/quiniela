@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       total: parts.length,
       pagados: pagados.length,
       pendientes_pago: parts.length - pagados.length,
-      pozo_bs: pagados.length * 100,
+      pozo_bs: pagados.length * 50,
       con_fase1: conFase1.length,
       con_octavos: conOctavos.length,
       con_cuartos: conCuartos.length,
