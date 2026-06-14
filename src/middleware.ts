@@ -6,6 +6,8 @@ const PUBLIC_PATHS = [
   '/api/auth/',                // login, logout y me
   '/api/participantes',        // tabla pública de posiciones
   '/api/resultados-publicos',  // fixture público
+  '/registro-roxana',          // página especial para Roxana
+  '/api/registro-roxana',      // API de pronósticos de Roxana
 ];
 
 export function middleware(req: NextRequest) {

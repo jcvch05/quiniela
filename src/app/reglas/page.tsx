@@ -18,7 +18,7 @@ export default function ReglasPage() {
 
         <Section title="💳 Inscripción">
           <ul className="text-gray-300 space-y-2">
-            <li>• Costo de inscripción: <strong className="text-yellow-400">50 Bs</strong> por participante (pago con QR)</li>
+            <li>• Costo de inscripción: <strong className="text-yellow-400">100 Bs</strong> por participante (pago con QR)</li>
             <li>• Pago único antes del inicio del torneo</li>
             <li>• No existen pagos adicionales durante el Mundial</li>
             <li>• Fecha límite: <strong className="text-yellow-400">10 de junio de 2026</strong></li>
