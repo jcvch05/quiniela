@@ -17,7 +17,7 @@ export default function RegistroRoxana() {
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [error, setError] = useState('');
-  const [grupoActivo, setGrupoActivo] = useState(gruposDisponibles[0] ?? 'A');
+  const [grupoActivo, setGrupoActivo] = useState<string>(gruposDisponibles[0] ?? 'A');
 
   useEffect(() => {
     const init: Record<string, { golesLocal: string; golesVisitante: string }> = {};
@@ -100,7 +100,7 @@ export default function RegistroRoxana() {
             const comp = ps.filter(p => pronosticos[p.id]?.golesLocal !== '' && pronosticos[p.id]?.golesVisitante !== '').length;
             const done = comp === ps.length;
             return (
-              <button key={g} onClick={() => setGrupoActivo(g)}
+              <button key={g} onClick={() => setGrupoActivo(g as string)}
                 className={`w-12 h-12 rounded-xl font-black text-sm transition-colors relative ${
                   grupoActivo === g ? 'bg-yellow-400 text-black' : done ? 'bg-green-700/50 text-green-300 border border-green-500/50' : 'bg-white/10 text-gray-300 hover:bg-white/20'
                 }`}>
