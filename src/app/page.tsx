@@ -98,10 +98,6 @@ export default function Home() {
               className="bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-10 py-4 rounded-2xl text-xl transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:scale-105">
               Ver posiciones 🏆
             </Link>
-            <Link href="/fixture"
-              className="border-2 border-white/20 hover:border-white/50 hover:bg-white/5 text-white font-bold px-10 py-4 rounded-2xl text-xl transition-all">
-              Ver fixture ⚽
-            </Link>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/agenda"
