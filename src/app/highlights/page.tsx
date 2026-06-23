@@ -27,7 +27,7 @@ export default function HighlightsPage() {
 
   const partidos = resultados.map(r => {
     const partido = PARTIDOS_GRUPOS.find(p => p.id === r.id);
-    return { ...r, local: partido?.local ?? '', visitante: partido?.visitante ?? '', grupo: partido?.grupo ?? '' };
+    return { ...r, local: partido?.local ?? '', visitante: partido?.visitante ?? '', grupo: partido?.grupo ?? '', fecha: partido?.fecha ?? '', sede: partido?.sede ?? '', ciudad: partido?.ciudad ?? '' };
   });
 
   return (
@@ -61,6 +61,12 @@ export default function HighlightsPage() {
                     </span>
                     <span className="font-bold text-lg flex-1 text-left">{r.visitante}</span>
                   </div>
+                  {r.fecha && (
+                    <p className="text-xs text-gray-400 text-center mt-2">
+                      📅 {new Date(r.fecha.split('T')[0] + 'T12:00:00').toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      {r.sede && <span className="ml-2">· 📍 {r.sede}, {r.ciudad}</span>}
+                    </p>
+                  )}
                 </div>
 
                 {/* Video */}
