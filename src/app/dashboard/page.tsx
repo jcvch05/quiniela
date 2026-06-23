@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [resultadoForm, setResultadoForm] = useState({ partidoId: '', golesLocal: '', golesVisitante: '', video: '' });
   const [guardandoResultado, setGuardandoResultado] = useState(false);
   const [msgResultado, setMsgResultado] = useState('');
+  const [resultadosSistema, setResultadosSistema] = useState<Record<string, { golesLocal: number; golesVisitante: number }>>({});
 
   const HEADERS = { 'Content-Type': 'application/json' };
   const OPTS = { credentials: 'include' as const };
@@ -66,6 +67,16 @@ export default function DashboardPage() {
     const iv = setInterval(() => fetchData(), REFRESH);
     return () => clearInterval(iv);
   }, [fetchData]);
+
+  useEffect(() => {
+    fetch('/api/resultados-publicos', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((data: Array<{ id: string; golesLocal: number; golesVisitante: number; jugado: boolean }>) => {
+        const map: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+        for (const r of data) if (r.jugado) map[r.id] = { golesLocal: r.golesLocal, golesVisitante: r.golesVisitante };
+        setResultadosSistema(map);
+      }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const tick = setInterval(() => setCountdown(c => c <= 1 ? REFRESH / 1000 : c - 1), 1000);
@@ -396,9 +407,14 @@ export default function DashboardPage() {
                   <select value={resultadoForm.partidoId} onChange={e => setResultadoForm(f => ({ ...f, partidoId: e.target.value }))}
                     className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-full max-w-sm">
                     <option value="">— Selecciona un partido —</option>
-                    {PARTIDOS_GRUPOS.map(p => (
-                      <option key={p.id} value={p.id}>{p.id}: {p.local} vs {p.visitante}</option>
-                    ))}
+                    {PARTIDOS_GRUPOS.map(p => {
+                      const jugado = resultadosSistema[p.id];
+                      return (
+                        <option key={p.id} value={p.id} disabled={!!jugado}>
+                          {jugado ? '✓ ' : ''}{p.id}: {p.local} vs {p.visitante}{jugado ? ` (${jugado.golesLocal}-${jugado.golesVisitante})` : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 <div className="flex flex-wrap gap-3 items-end">

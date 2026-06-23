@@ -106,10 +106,10 @@ export default function TablaPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{entry.nombre}</p>
-                  <div className="flex gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
-                    <span>Grupos: <strong className="text-white">{sumGrupos(entry.desglose?.grupos)}</strong></span>
-                    <span>Eliminatorias: <strong className="text-white">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>
-                    <span>Especiales: <strong className="text-white">{entry.desglose?.especiales ?? 0}</strong></span>
+                  <div className="flex gap-2 text-xs text-gray-400 mt-0.5">
+                    <span>G:<strong className="text-white ml-0.5">{sumGrupos(entry.desglose?.grupos)}</strong></span>
+                    <span>E:<strong className="text-white ml-0.5">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>
+                    <span>Esp:<strong className="text-white ml-0.5">{entry.desglose?.especiales ?? 0}</strong></span>
                   </div>
                 </div>
                 <div className="text-3xl font-black text-yellow-400 shrink-0">{entry.puntos}</div>
