@@ -410,7 +410,7 @@ export default function DashboardPage() {
                     {PARTIDOS_GRUPOS.map(p => {
                       const jugado = resultadosSistema[p.id];
                       return (
-                        <option key={p.id} value={p.id} disabled={!!jugado}>
+                        <option key={p.id} value={p.id}>
                           {jugado ? '✓ ' : ''}{p.id}: {p.local} vs {p.visitante}{jugado ? ` (${jugado.golesLocal}-${jugado.golesVisitante})` : ''}
                         </option>
                       );
