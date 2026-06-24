@@ -97,8 +97,8 @@ function TablaGrupo({ partidos }: { partidos: Partido[] }) {
   const tabla = calcularTabla(partidos);
   const hayDatos = partidos.some(p => p.jugado);
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden mt-4">
-      <table className="w-full text-sm">
+    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-x-auto mt-4">
+      <table className="w-full text-sm min-w-[380px]">
         <thead>
           <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-wide">
             <th className="text-left px-3 py-2">#</th>
