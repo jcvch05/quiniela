@@ -167,7 +167,9 @@ export default function Home() {
             <p className="text-gray-400">Cuanto más exacto, más puntos</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
+          {/* Fase de grupos */}
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Fase de grupos</p>
+          <div className="grid md:grid-cols-3 gap-4 mb-2">
             <div className="bg-gradient-to-b from-green-900/40 to-transparent border border-green-700/40 rounded-2xl p-5 text-center">
               <div className="text-4xl mb-3">✅</div>
               <div className="font-black text-2xl text-yellow-400 mb-1">3 pts</div>
@@ -183,6 +185,28 @@ export default function Home() {
             <div className="bg-gradient-to-b from-purple-900/40 to-transparent border border-purple-700/40 rounded-2xl p-5 text-center">
               <div className="text-4xl mb-3">🔮</div>
               <div className="font-black text-2xl text-yellow-400 mb-1">8 pts</div>
+              <div className="font-bold text-white mb-1">Marcador exacto</div>
+              <div className="text-sm text-gray-400">Acertás el resultado completo</div>
+            </div>
+          </div>
+          {/* Fase eliminatoria */}
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 mt-4">16avos · Octavos · Cuartos · Semis · Final</p>
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-gradient-to-b from-green-900/40 to-transparent border border-green-700/40 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-3">✅</div>
+              <div className="font-black text-2xl text-yellow-400 mb-1">3 pts</div>
+              <div className="font-bold text-white mb-1">Ganador correcto</div>
+              <div className="text-sm text-gray-400">Acertás quién avanza</div>
+            </div>
+            <div className="bg-gradient-to-b from-blue-900/40 to-transparent border border-blue-700/40 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-3">🎯</div>
+              <div className="font-black text-2xl text-yellow-400 mb-1">5 pts</div>
+              <div className="font-bold text-white mb-1">Diferencia exacta</div>
+              <div className="text-sm text-gray-400">Acertás la diferencia de goles</div>
+            </div>
+            <div className="bg-gradient-to-b from-purple-900/40 to-transparent border border-purple-700/40 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-3">🔮</div>
+              <div className="font-black text-2xl text-yellow-400 mb-1">10 pts</div>
               <div className="font-bold text-white mb-1">Marcador exacto</div>
               <div className="text-sm text-gray-400">Acertás el resultado completo</div>
             </div>
