@@ -12,6 +12,7 @@ const links = [
   { href: '/agenda',       label: '🗓️ Agenda' },
   { href: '/apuestas',     label: '🎲 Apuestas' },
   { href: '/highlights',   label: '🎬 Resúmenes' },
+  { href: '/eliminatorias',label: '⚔️ Eliminatorias' },
   { href: '/pronosticos',  label: '🎯 Pronósticos' },
   { href: '/reglas',       label: '📋 Reglas' },
 ];

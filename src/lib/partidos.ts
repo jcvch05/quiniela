@@ -101,3 +101,36 @@ export const PARTIDOS_GRUPOS: Partido[] = [
 ];
 
 export const TODOS_PARTIDOS: Partido[] = [...PARTIDOS_GRUPOS];
+
+export interface PartidoEliminatoria {
+  id: string;
+  fase: 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final';
+  local: string;
+  visitante: string;
+  fecha: string;
+  sede: string;
+  ciudad: string;
+  ganador?: string;
+}
+
+// Deadline apuestas dieciseisavos: antes del primer partido (28 jun 14:00 BOT)
+export const DEADLINE_DIECISEISAVOS = '2026-06-28T14:00';
+
+export const PARTIDOS_DIECISEISAVOS: PartidoEliminatoria[] = [
+  { id: 'D01', fase: 'dieciseisavos', local: 'Sudáfrica',      visitante: 'Canadá',          fecha: '2026-06-28T15:00', sede: 'SoFi Stadium',            ciudad: 'Inglewood' },
+  { id: 'D02', fase: 'dieciseisavos', local: 'Brasil',          visitante: 'Japón',           fecha: '2026-06-29T13:00', sede: 'NRG Stadium',             ciudad: 'Houston' },
+  { id: 'D03', fase: 'dieciseisavos', local: 'Alemania',        visitante: 'Paraguay',        fecha: '2026-06-29T16:30', sede: 'Gillette Stadium',        ciudad: 'Boston' },
+  { id: 'D04', fase: 'dieciseisavos', local: 'Países Bajos',   visitante: 'Marruecos',       fecha: '2026-06-29T21:00', sede: 'Estadio BBVA',            ciudad: 'Monterrey' },
+  { id: 'D05', fase: 'dieciseisavos', local: 'Costa de Marfil',visitante: 'Noruega',         fecha: '2026-06-30T13:00', sede: 'AT&T Stadium',            ciudad: 'Arlington' },
+  { id: 'D06', fase: 'dieciseisavos', local: 'Francia',         visitante: 'Suecia',          fecha: '2026-06-30T17:00', sede: 'MetLife Stadium',         ciudad: 'Nueva York / NJ' },
+  { id: 'D07', fase: 'dieciseisavos', local: 'México',          visitante: 'Por confirmar',   fecha: '2026-06-30T21:00', sede: 'Estadio Azteca',          ciudad: 'Ciudad de México' },
+  { id: 'D08', fase: 'dieciseisavos', local: 'Por confirmar',   visitante: 'Por confirmar',   fecha: '2026-07-01T13:00', sede: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta' },
+  { id: 'D09', fase: 'dieciseisavos', local: 'EE.UU.',          visitante: 'Bosnia-Herz.',    fecha: '2026-07-01T17:00', sede: "Levi's Stadium",          ciudad: 'Santa Clara' },
+  { id: 'D10', fase: 'dieciseisavos', local: 'Bélgica',         visitante: 'Por confirmar',   fecha: '2026-07-01T21:00', sede: 'Lumen Field',             ciudad: 'Seattle' },
+  { id: 'D11', fase: 'dieciseisavos', local: 'España',          visitante: 'Por confirmar',   fecha: '2026-07-02T13:00', sede: 'SoFi Stadium',            ciudad: 'Inglewood' },
+  { id: 'D12', fase: 'dieciseisavos', local: 'Por confirmar',   visitante: 'Por confirmar',   fecha: '2026-07-02T17:00', sede: 'BMO Field',               ciudad: 'Toronto' },
+  { id: 'D13', fase: 'dieciseisavos', local: 'Suiza',           visitante: 'Por confirmar',   fecha: '2026-07-02T21:00', sede: 'BC Place',                ciudad: 'Vancouver' },
+  { id: 'D14', fase: 'dieciseisavos', local: 'Australia',       visitante: 'Egipto',          fecha: '2026-07-03T13:00', sede: 'AT&T Stadium',            ciudad: 'Arlington' },
+  { id: 'D15', fase: 'dieciseisavos', local: 'Argentina',       visitante: 'Cabo Verde',      fecha: '2026-07-03T17:00', sede: 'Hard Rock Stadium',       ciudad: 'Miami Gardens' },
+  { id: 'D16', fase: 'dieciseisavos', local: 'Por confirmar',   visitante: 'Por confirmar',   fecha: '2026-07-03T21:00', sede: 'Arrowhead Stadium',       ciudad: 'Kansas City' },
+];
