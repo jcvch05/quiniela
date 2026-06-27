@@ -5,11 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PARTIDOS_DIECISEISAVOS, DEADLINE_DIECISEISAVOS } from '@/lib/partidos';
 
 interface UserSession { uid: string; name: string; }
-
-function labelFecha(fecha: string) {
-  const d = new Date(fecha.split('T')[0] + 'T12:00:00');
-  return d.toLocaleDateString('es-BO', { weekday: 'short', day: 'numeric', month: 'short' });
-}
+interface Pred { golesLocal: string; golesVisitante: string; }
 
 function horaBOT(fecha: string) {
   return fecha.includes('T') ? fecha.split('T')[1] + ' BOT' : '';
@@ -18,7 +14,7 @@ function horaBOT(fecha: string) {
 export default function EliminatoriasPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserSession | null>(null);
-  const [picks, setPicks] = useState<Record<string, string>>({});
+  const [picks, setPicks] = useState<Record<string, Pred>>({});
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState('');
   const [yaGuardado, setYaGuardado] = useState(false);
@@ -32,10 +28,9 @@ export default function EliminatoriasPage() {
       .then(({ user: u }) => {
         if (!u) { router.push('/login'); return; }
         setUser({ uid: u.uid, name: u.name });
-        // Cargar apuestas existentes
         fetch('/api/participantes', { cache: 'no-store' })
           .then(r => r.json())
-          .then((parts: Array<{ id: string; pronosticosDieciseisavos?: Record<string, string> }>) => {
+          .then((parts: Array<{ id: string; pronosticosDieciseisavos?: Record<string, Pred> }>) => {
             const p = parts.find(x => x.id === u.uid);
             if (p?.pronosticosDieciseisavos && Object.keys(p.pronosticosDieciseisavos).length > 0) {
               setPicks(p.pronosticosDieciseisavos);
@@ -45,9 +40,9 @@ export default function EliminatoriasPage() {
       });
   }, [router]);
 
-  function pick(partidoId: string, equipo: string) {
+  function setGol(partidoId: string, campo: 'golesLocal' | 'golesVisitante', val: string) {
     if (cerrado) return;
-    setPicks(prev => ({ ...prev, [partidoId]: equipo }));
+    setPicks(prev => ({ ...prev, [partidoId]: { ...prev[partidoId] ?? { golesLocal: '', golesVisitante: '' }, [campo]: val } }));
     setYaGuardado(false);
   }
 
@@ -69,10 +64,9 @@ export default function EliminatoriasPage() {
     finally { setGuardando(false); }
   }
 
-  const completados = PARTIDOS_DIECISEISAVOS.filter(p => p.local !== 'Por confirmar' && p.visitante !== 'Por confirmar' && picks[p.id]).length;
-  const disponibles = PARTIDOS_DIECISEISAVOS.filter(p => p.local !== 'Por confirmar' && p.visitante !== 'Por confirmar').length;
+  const disponibles = PARTIDOS_DIECISEISAVOS.filter(p => p.local !== 'Por confirmar' && p.visitante !== 'Por confirmar');
+  const completados = disponibles.filter(p => picks[p.id]?.golesLocal !== '' && picks[p.id]?.golesVisitante !== '' && picks[p.id]?.golesLocal !== undefined).length;
 
-  // Agrupar por fecha
   const porFecha = PARTIDOS_DIECISEISAVOS.reduce((acc, p) => {
     const f = p.fecha.split('T')[0];
     if (!acc[f]) acc[f] = [];
@@ -85,18 +79,16 @@ export default function EliminatoriasPage() {
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-black text-yellow-400 mb-1">⚔️ Dieciseisavos</h1>
-          <p className="text-gray-400 text-sm">Elige el ganador de cada partido · 10 pts por acierto</p>
+          <p className="text-gray-400 text-sm">Predice el marcador · Exacto: 10pts · Diferencia: 5pts · Ganador: 3pts</p>
           {user && <p className="text-green-300 text-sm mt-1">👤 {user.name}</p>}
         </div>
 
-        {/* Deadline */}
         <div className={`rounded-xl px-4 py-3 mb-6 text-center text-sm font-semibold ${cerrado ? 'bg-red-900/30 border border-red-500/40 text-red-300' : 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-300'}`}>
           {cerrado
             ? '🔒 Plazo cerrado — las apuestas ya no se pueden modificar'
-            : `⏰ Cierra el 28 jun a las 14:00 BOT · ${completados}/${disponibles} partidos apostados`}
+            : `⏰ Cierra el 28 jun a las 14:00 BOT · ${completados}/${disponibles.length} completados`}
         </div>
 
-        {/* Partidos por fecha */}
         {Object.entries(porFecha).map(([fecha, partidos]) => (
           <div key={fecha} className="mb-6">
             <h2 className="text-sm font-bold text-green-400 uppercase tracking-widest mb-3">
@@ -104,34 +96,29 @@ export default function EliminatoriasPage() {
             </h2>
             <div className="space-y-3">
               {partidos.map(p => {
-                const porcConfirmar = p.local === 'Por confirmar' || p.visitante === 'Por confirmar';
-                const seleccion = picks[p.id];
+                const porConfirmar = p.local === 'Por confirmar' || p.visitante === 'Por confirmar';
+                const pred = picks[p.id];
+                const completo = pred?.golesLocal !== '' && pred?.golesLocal !== undefined && pred?.golesVisitante !== '' && pred?.golesVisitante !== undefined;
                 return (
-                  <div key={p.id} className={`rounded-2xl border p-4 ${porcConfirmar ? 'border-white/5 bg-white/2 opacity-50' : seleccion ? 'border-yellow-400/40 bg-yellow-400/5' : 'border-white/10 bg-white/5'}`}>
+                  <div key={p.id} className={`rounded-2xl border p-4 ${porConfirmar ? 'border-white/5 opacity-40' : completo ? 'border-yellow-400/40 bg-yellow-400/5' : 'border-white/10 bg-white/5'}`}>
                     <p className="text-xs text-gray-500 text-center mb-3">
                       {horaBOT(p.fecha)} · 📍 {p.sede}, {p.ciudad}
                     </p>
-                    {porcConfirmar ? (
-                      <p className="text-center text-gray-500 text-sm">Por confirmar tras grupos</p>
+                    {porConfirmar ? (
+                      <p className="text-center text-gray-500 text-sm italic">Por confirmar tras grupos</p>
                     ) : (
-                      <div className="flex gap-2">
-                        <button onClick={() => pick(p.id, p.local)} disabled={cerrado}
-                          className={`flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all ${
-                            seleccion === p.local
-                              ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
-                              : 'bg-white/10 text-gray-200 hover:bg-white/20'
-                          } ${cerrado ? 'cursor-not-allowed' : ''}`}>
-                          {p.local}
-                        </button>
-                        <div className="flex items-center px-2 text-gray-500 font-black text-sm">VS</div>
-                        <button onClick={() => pick(p.id, p.visitante)} disabled={cerrado}
-                          className={`flex-1 py-3 px-2 rounded-xl font-bold text-sm transition-all ${
-                            seleccion === p.visitante
-                              ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
-                              : 'bg-white/10 text-gray-200 hover:bg-white/20'
-                          } ${cerrado ? 'cursor-not-allowed' : ''}`}>
-                          {p.visitante}
-                        </button>
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 text-right font-bold text-base leading-tight">{p.local}</span>
+                        <input type="number" min="0" max="20" placeholder="?" disabled={cerrado}
+                          value={pred?.golesLocal ?? ''}
+                          onChange={e => setGol(p.id, 'golesLocal', e.target.value)}
+                          className="w-14 text-center font-black text-xl bg-gray-800 border border-white/20 rounded-lg py-2 text-white disabled:opacity-50" />
+                        <span className="text-gray-500 font-black">-</span>
+                        <input type="number" min="0" max="20" placeholder="?" disabled={cerrado}
+                          value={pred?.golesVisitante ?? ''}
+                          onChange={e => setGol(p.id, 'golesVisitante', e.target.value)}
+                          className="w-14 text-center font-black text-xl bg-gray-800 border border-white/20 rounded-lg py-2 text-white disabled:opacity-50" />
+                        <span className="flex-1 text-left font-bold text-base leading-tight">{p.visitante}</span>
                       </div>
                     )}
                   </div>
@@ -141,12 +128,11 @@ export default function EliminatoriasPage() {
           </div>
         ))}
 
-        {/* Botón guardar */}
         {!cerrado && (
           <div className="sticky bottom-4">
             <button onClick={guardar} disabled={guardando || completados === 0}
               className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-black text-lg py-4 rounded-2xl shadow-lg shadow-yellow-400/20 transition-all">
-              {guardando ? '⏳ Guardando…' : yaGuardado ? '✅ Guardado' : `💾 Guardar apuestas (${completados}/${disponibles})`}
+              {guardando ? '⏳ Guardando…' : yaGuardado ? '✅ Guardado' : `💾 Guardar (${completados}/${disponibles.length})`}
             </button>
             {msg && <p className="text-center text-sm mt-2 font-semibold">{msg}</p>}
           </div>
