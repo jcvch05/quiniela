@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PARTIDOS_GRUPOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS } from '@/lib/partidos';
 import { Partido } from '@/types';
 
 // ─── Constantes de fases eliminatorias ───────────────────────────────────────
@@ -138,15 +138,16 @@ function TablaGrupo({ partidos }: { partidos: Partido[] }) {
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
-type Vista = 'grupos' | 'octavos' | 'cuartos' | 'semis' | 'final' | 'agenda';
+type Vista = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final' | 'agenda';
 
 const VISTAS: { id: Vista; label: string }[] = [
-  { id: 'grupos',  label: '📊 Grupos' },
-  { id: 'octavos', label: '⚔️ Octavos' },
-  { id: 'cuartos', label: '🔥 Cuartos' },
-  { id: 'semis',   label: '🌟 Semis' },
-  { id: 'final',   label: '🏆 Final' },
-  { id: 'agenda',  label: '📆 Agenda' },
+  { id: 'grupos',         label: '📊 Grupos' },
+  { id: 'dieciseisavos',  label: '⚔️ 16avos' },
+  { id: 'octavos',        label: '✖️ Octavos' },
+  { id: 'cuartos',        label: '🔥 Cuartos' },
+  { id: 'semis',          label: '🌟 Semis' },
+  { id: 'final',          label: '🏆 Final' },
+  { id: 'agenda',         label: '📆 Agenda' },
 ];
 
 export default function FixturePage() {
@@ -268,6 +269,27 @@ export default function FixturePage() {
             {/* Partidos del grupo */}
             <div className="space-y-3 mt-5">
               {partidosGrupo.map(p => <PartidoCard key={p.id} p={p} />)}
+            </div>
+          </>
+        )}
+
+        {/* ── DIECISEISAVOS ── */}
+        {vista === 'dieciseisavos' && (
+          <>
+            <h2 className="text-2xl font-black text-yellow-400 mb-2">Dieciseisavos de Final</h2>
+            <p className="text-gray-400 text-sm mb-5">Del 28 de junio al 3 de julio de 2026</p>
+            <div className="space-y-3">
+              {PARTIDOS_DIECISEISAVOS.map(p => {
+                const r = resultados[p.id];
+                const partido = {
+                  id: p.id, fase: 'octavos' as const,
+                  local: p.local, visitante: p.visitante,
+                  fecha: p.fecha, sede: p.sede, ciudad: p.ciudad,
+                  jugado: !!r,
+                  golesLocal: r?.golesLocal, golesVisitante: r?.golesVisitante,
+                };
+                return <PartidoCard key={p.id} p={partido} />;
+              })}
             </div>
           </>
         )}
