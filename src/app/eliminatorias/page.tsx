@@ -78,9 +78,8 @@ export default function EliminatoriasPage() {
     <main className="min-h-screen bg-gradient-to-b from-green-950 to-black text-white py-8 px-4">
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-black text-yellow-400 mb-1">⚔️ Dieciseisavos</h1>
+          <h1 className="text-3xl font-black text-yellow-400 mb-1">⚔️ Pronósticos Fase 16avos</h1>
           <p className="text-gray-400 text-sm">Predice el marcador · Exacto: 10pts · Diferencia: 5pts · Ganador: 3pts</p>
-          {user && <p className="text-green-300 text-sm mt-1">👤 {user.name}</p>}
         </div>
 
         <div className={`rounded-xl px-4 py-3 mb-6 text-center text-sm font-semibold ${cerrado ? 'bg-red-900/30 border border-red-500/40 text-red-300' : 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-300'}`}>

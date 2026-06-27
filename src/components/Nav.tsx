@@ -6,13 +6,13 @@ import { useState, useEffect } from 'react';
 import { getSession, clearSession } from '@/lib/authService';
 
 const links = [
+  { href: '/eliminatorias',label: '⚔️ Eliminatorias' },
   { href: '/',             label: '🏠 Inicio' },
   { href: '/tabla',        label: '🏆 Posiciones' },
   { href: '/fixture',      label: '📅 Fixture' },
   { href: '/agenda',       label: '🗓️ Agenda' },
   { href: '/apuestas',     label: '🎲 Apuestas' },
   { href: '/highlights',   label: '🎬 Resúmenes' },
-  { href: '/eliminatorias',label: '⚔️ Eliminatorias' },
   { href: '/reglas',       label: '📋 Reglas' },
 ];
 

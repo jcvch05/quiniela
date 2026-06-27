@@ -88,8 +88,16 @@ export default function Home() {
             Demuestra que eres el mejor pronosticador. Predice los resultados y compite por el pozo.
           </p>
 
+          {/* Banner Eliminatorias */}
+          <Link href="/eliminatorias"
+            className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-400/60 hover:border-yellow-400 text-yellow-300 px-6 py-4 rounded-2xl text-sm font-bold mb-6 flex flex-col items-center gap-1 transition-all hover:scale-105 max-w-sm">
+            <span className="text-xl">⚔️ ¡Pronostica la Fase 16avos!</span>
+            <span className="text-xs text-yellow-400/80">Cierra el domingo 29 jun a las 13:00 BOT</span>
+            <span className="text-xs text-white/60 mt-1">Toca aquí para apostar →</span>
+          </Link>
+
           {/* Inscripciones cerradas */}
-          <div className="bg-gray-800/60 border border-gray-600/40 text-gray-400 px-4 py-2 rounded-xl text-sm font-semibold mb-8 inline-flex items-center gap-2">
+          <div className="bg-gray-800/60 border border-gray-600/40 text-gray-400 px-4 py-2 rounded-xl text-sm font-semibold mb-6 inline-flex items-center gap-2">
             🔒 Inscripciones cerradas
           </div>
 
