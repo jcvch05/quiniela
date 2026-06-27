@@ -6,8 +6,8 @@ import { useState, useEffect } from 'react';
 import { getSession, clearSession } from '@/lib/authService';
 
 const links = [
-  { href: '/eliminatorias',label: '⚔️ Eliminatorias' },
   { href: '/',             label: '🏠 Inicio' },
+  { href: '/eliminatorias',label: '🎯 Pronósticos' },
   { href: '/tabla',        label: '🏆 Posiciones' },
   { href: '/fixture',      label: '📅 Fixture' },
   { href: '/agenda',       label: '🗓️ Agenda' },
