@@ -114,7 +114,7 @@ export interface PartidoEliminatoria {
 }
 
 // Deadline apuestas dieciseisavos: antes del primer partido (28 jun 14:00 BOT)
-export const DEADLINE_DIECISEISAVOS = '2026-06-29T13:00';
+export const DEADLINE_DIECISEISAVOS = '2026-06-28T14:00';
 
 export const PARTIDOS_DIECISEISAVOS: PartidoEliminatoria[] = [
   { id: 'D01', fase: 'dieciseisavos', local: 'Sudáfrica',      visitante: 'Canadá',          fecha: '2026-06-28T15:00', sede: 'SoFi Stadium',            ciudad: 'Inglewood' },
