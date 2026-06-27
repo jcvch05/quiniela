@@ -96,10 +96,6 @@ export default function Home() {
             <span className="text-xs text-white/60 mt-1">Toca aquí para apostar →</span>
           </Link>
 
-          {/* Inscripciones cerradas */}
-          <div className="bg-gray-800/60 border border-gray-600/40 text-gray-400 px-4 py-2 rounded-xl text-sm font-semibold mb-6 inline-flex items-center gap-2">
-            🔒 Inscripciones cerradas
-          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <Link href="/tabla"
