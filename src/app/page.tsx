@@ -104,9 +104,9 @@ export default function Home() {
             </Link>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/agenda"
+            <Link href="/fixture"
               className="border-2 border-green-500/40 hover:border-green-400/70 hover:bg-green-900/20 text-green-300 font-bold px-10 py-4 rounded-2xl text-xl transition-all">
-              🗓️ Agenda
+              📅 Fixture
             </Link>
             <Link href="/highlights"
               className="border-2 border-purple-500/40 hover:border-purple-400/70 hover:bg-purple-900/20 text-purple-300 font-bold px-10 py-4 rounded-2xl text-xl transition-all">
