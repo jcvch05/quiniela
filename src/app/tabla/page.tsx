@@ -9,17 +9,18 @@ interface Entry {
   puntos: number;
   desglose: {
     grupos: Record<string, number> | number;
-    octavos: number;
-    cuartos: number;
-    semis: number;
-    especiales: number;
+    dieciseisavos?: Record<string, number> | number;
+    octavos?: number;
+    cuartos?: number;
+    semis?: number;
+    especiales?: number;
   };
 }
 
-function sumGrupos(grupos: Record<string, number> | number | undefined): number {
-  if (!grupos) return 0;
-  if (typeof grupos === 'number') return grupos;
-  return Object.values(grupos).reduce((a, b) => a + b, 0);
+function sumFase(fase: Record<string, number> | number | undefined): number {
+  if (!fase) return 0;
+  if (typeof fase === 'number') return fase;
+  return Object.values(fase).reduce((a, b) => a + b, 0);
 }
 
 const REFRESH_INTERVAL = 30_000; // 30 segundos
@@ -106,10 +107,11 @@ export default function TablaPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{entry.nombre}</p>
-                  <div className="flex gap-2 text-xs text-gray-400 mt-0.5">
-                    <span>G:<strong className="text-white ml-0.5">{sumGrupos(entry.desglose?.grupos)}</strong></span>
-                    <span>E:<strong className="text-white ml-0.5">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>
-                    <span>Esp:<strong className="text-white ml-0.5">{entry.desglose?.especiales ?? 0}</strong></span>
+                  <div className="flex gap-2 text-xs text-gray-400 mt-0.5 flex-wrap">
+                    <span>G:<strong className="text-white ml-0.5">{sumFase(entry.desglose?.grupos)}</strong></span>
+                    {sumFase(entry.desglose?.dieciseisavos) > 0 && <span>16:<strong className="text-yellow-300 ml-0.5">{sumFase(entry.desglose?.dieciseisavos)}</strong></span>}
+                    {((entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)) > 0 && <span>Elim:<strong className="text-white ml-0.5">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>}
+                    {(entry.desglose?.especiales ?? 0) > 0 && <span>Esp:<strong className="text-white ml-0.5">{entry.desglose?.especiales ?? 0}</strong></span>}
                   </div>
                 </div>
                 <div className="text-3xl font-black text-yellow-400 shrink-0">{entry.puntos}</div>
