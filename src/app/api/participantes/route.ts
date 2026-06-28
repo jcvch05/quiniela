@@ -13,6 +13,7 @@ export async function GET() {
         desglose: p.desglose,
         pagado: p.pagado,
         pronosticosGrupos: p.pronosticosGrupos ?? {},
+        pronosticosDieciseisavos: p.pronosticosDieciseisavos ?? {},
       }))
       .filter((p: { pagado: unknown }) => p.pagado)
       .sort((a: { puntos: unknown }, b: { puntos: unknown }) => (b.puntos as number) - (a.puntos as number));
