@@ -398,55 +398,6 @@ export default function FixturePage() {
           </div>
         )}
 
-        {/* ── AGENDA DIARIA ── */}
-        {vista === 'agenda' && (
-          <>
-            <h2 className="text-2xl font-black text-blue-400 mb-4">Agenda Diaria</h2>
-
-            {/* Selector de fecha */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {fechasDisponibles.map(f => (
-                <button key={f} onClick={() => setFechaAgenda(f)}
-                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                    fechaAgenda === f ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}>
-                  {labelFechaCorta(f)}
-                </button>
-              ))}
-            </div>
-
-            {/* Resumen del día */}
-            {fechaAgenda && (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold capitalize">{labelFecha(fechaAgenda)}</h3>
-                  <span className="text-sm text-gray-400 bg-white/10 px-3 py-1 rounded-full">
-                    {partidosDelDia.length} partido{partidosDelDia.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {/* Horarios rápidos */}
-                <div className="flex flex-wrap gap-2 mb-5">
-                  {partidosDelDia.map(p => (
-                    <span key={p.id} className={`text-xs px-2 py-1 rounded-lg font-semibold ${
-                      p.jugado ? 'bg-green-700/40 text-green-300' : 'bg-white/10 text-gray-300'
-                    }`}>
-                      {hora(p.fecha)} · Gr.{p.grupo}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  {partidosDelDia.map(p => <PartidoCard key={p.id} p={p} compact />)}
-                </div>
-
-                {partidosDelDia.length === 0 && (
-                  <p className="text-center text-gray-500 py-10">No hay partidos este día</p>
-                )}
-              </>
-            )}
-          </>
-        )}
       </div>
     </main>
   );
