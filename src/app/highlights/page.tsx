@@ -13,6 +13,8 @@ interface Resultado {
 
 type Fase = 'grupos' | 'dieciseisavos';
 
+const GRUPOS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+
 function youtubeId(url: string): string | null {
   const m = url.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
@@ -35,7 +37,7 @@ function VideoCard({ r }: { r: Resultado & { local: string; visitante: string; g
         </div>
         {r.fecha && (
           <p className="text-xs text-gray-400 text-center mt-2">
-            📅 {new Date(r.fecha.split('T')[0] + 'T12:00:00').toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            📅 {new Date(r.fecha.split('T')[0] + 'T12:00:00').toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' })}
             {r.sede && <span className="ml-2">· 📍 {r.sede}, {r.ciudad}</span>}
           </p>
         )}
@@ -75,6 +77,7 @@ function VideoCard({ r }: { r: Resultado & { local: string; visitante: string; g
 export default function HighlightsPage() {
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [fase, setFase] = useState<Fase>('grupos');
+  const [grupoActivo, setGrupoActivo] = useState<string>('A');
 
   useEffect(() => {
     fetch('/api/resultados-publicos', { cache: 'no-store' })
@@ -82,19 +85,29 @@ export default function HighlightsPage() {
       .then((data: Resultado[]) => setResultados(data.filter(r => r.jugado && r.video)));
   }, []);
 
-  const partidosGrupos = resultados.map(r => {
-    const p = PARTIDOS_GRUPOS.find(x => x.id === r.id);
-    if (!p) return null;
-    return { ...r, local: p.local, visitante: p.visitante, grupo: p.grupo, fecha: p.fecha, sede: p.sede ?? '', ciudad: p.ciudad ?? '' };
-  }).filter(Boolean) as (Resultado & { local: string; visitante: string; grupo?: string; fecha: string; sede: string; ciudad: string })[];
+  // Grupos con al menos un video
+  const gruposConVideo = GRUPOS.filter(g =>
+    resultados.some(r => {
+      const p = PARTIDOS_GRUPOS.find(x => x.id === r.id);
+      return p?.grupo === g;
+    })
+  );
 
-  const partidosDieciseisavos = resultados.map(r => {
-    const p = PARTIDOS_DIECISEISAVOS.find(x => x.id === r.id);
-    if (!p) return null;
-    return { ...r, local: p.local, visitante: p.visitante, grupo: undefined, fecha: p.fecha, sede: p.sede, ciudad: p.ciudad };
-  }).filter(Boolean) as (Resultado & { local: string; visitante: string; grupo?: string; fecha: string; sede: string; ciudad: string })[];
+  const partidosGrupo = resultados
+    .map(r => {
+      const p = PARTIDOS_GRUPOS.find(x => x.id === r.id);
+      if (!p || p.grupo !== grupoActivo) return null;
+      return { ...r, local: p.local, visitante: p.visitante, grupo: p.grupo, fecha: p.fecha, sede: p.sede ?? '', ciudad: p.ciudad ?? '' };
+    })
+    .filter(Boolean) as (Resultado & { local: string; visitante: string; grupo?: string; fecha: string; sede: string; ciudad: string })[];
 
-  const partidos = fase === 'grupos' ? partidosGrupos : partidosDieciseisavos;
+  const partidosDieciseisavos = resultados
+    .map(r => {
+      const p = PARTIDOS_DIECISEISAVOS.find(x => x.id === r.id);
+      if (!p) return null;
+      return { ...r, local: p.local, visitante: p.visitante, grupo: undefined, fecha: p.fecha, sede: p.sede, ciudad: p.ciudad };
+    })
+    .filter(Boolean) as (Resultado & { local: string; visitante: string; grupo?: string; fecha: string; sede: string; ciudad: string })[];
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-950 via-black to-black text-white py-10 px-4">
@@ -105,7 +118,7 @@ export default function HighlightsPage() {
         </div>
 
         {/* Tabs de fase */}
-        <div className="flex gap-2 mb-8 justify-center">
+        <div className="flex gap-2 mb-6 justify-center">
           {([['grupos', '📊 Fase Grupos'], ['dieciseisavos', '⚔️ Fase 16avos']] as [Fase, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setFase(id)}
               className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-colors ${
@@ -116,17 +129,46 @@ export default function HighlightsPage() {
           ))}
         </div>
 
-        {partidos.length === 0 && (
-          <div className="text-center py-20 text-gray-500">
-            <div className="text-5xl mb-4">📺</div>
-            <p>Aún no hay resúmenes disponibles.</p>
-            <p className="text-sm mt-1">Los videos aparecen aquí después de cada partido.</p>
-          </div>
+        {/* Selector de grupo (solo fase grupos) */}
+        {fase === 'grupos' && (
+          <>
+            <div className="flex flex-wrap gap-2 mb-6 justify-center">
+              {gruposConVideo.map(g => (
+                <button key={g} onClick={() => setGrupoActivo(g)}
+                  className={`w-11 h-11 rounded-xl font-black text-base transition-colors ${
+                    grupoActivo === g ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  }`}>
+                  {g}
+                </button>
+              ))}
+            </div>
+
+            {partidosGrupo.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">
+                <div className="text-4xl mb-3">📺</div>
+                <p>No hay videos para el Grupo {grupoActivo} aún.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {partidosGrupo.map(r => <VideoCard key={r.id} r={r} />)}
+              </div>
+            )}
+          </>
         )}
 
-        <div className="space-y-8">
-          {partidos.map(r => <VideoCard key={r.id} r={r} />)}
-        </div>
+        {/* Fase 16avos */}
+        {fase === 'dieciseisavos' && (
+          partidosDieciseisavos.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <div className="text-4xl mb-3">📺</div>
+              <p>Aún no hay resúmenes de 16avos.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {partidosDieciseisavos.map(r => <VideoCard key={r.id} r={r} />)}
+            </div>
+          )
+        )}
       </div>
     </main>
   );
