@@ -10,7 +10,6 @@ const links = [
   { href: '/eliminatorias',label: '🎯 Pronósticos' },
   { href: '/tabla',        label: '🏆 Posiciones' },
   { href: '/fixture',      label: '📅 Fixture' },
-  { href: '/agenda',       label: '🗓️ Agenda' },
   { href: '/apuestas',     label: '🎲 Apuestas' },
   { href: '/highlights',   label: '🎬 Resúmenes' },
   { href: '/reglas',       label: '📋 Reglas' },

@@ -137,8 +137,28 @@ function TablaGrupo({ partidos }: { partidos: Partido[] }) {
   );
 }
 
+// ─── Zonas horarias ───────────────────────────────────────────────────────────
+const ZONAS = [
+  { id: 'BOT', label: '🇧🇴 BOT', offset: -4 },
+  { id: 'LON', label: '🇬🇧 LON', offset: +1 },
+  { id: 'BRU', label: '🇧🇪 BRU', offset: +2 },
+];
+
+function horaEnZona(fecha: string, offsetHoras: number): string {
+  if (!fecha.includes('T')) return '';
+  const [, timePart] = fecha.split('T');
+  const [h, m] = timePart.split(':').map(Number);
+  const totalMin = h * 60 + m + (offsetHoras + 4) * 60;
+  const dias = Math.floor(totalMin / (24 * 60));
+  const minutos = ((totalMin % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hh = Math.floor(minutos / 60).toString().padStart(2, '0');
+  const mm = (minutos % 60).toString().padStart(2, '0');
+  const suffix = dias > 0 ? ' +1d' : dias < 0 ? ' -1d' : '';
+  return `${hh}:${mm}${suffix}`;
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
-type Vista = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final' | 'agenda';
+type Vista = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final';
 
 const VISTAS: { id: Vista; label: string }[] = [
   { id: 'grupos',         label: '📊 Grupos' },
@@ -147,7 +167,6 @@ const VISTAS: { id: Vista; label: string }[] = [
   { id: 'cuartos',        label: '🔥 Cuartos' },
   { id: 'semis',          label: '🌟 Semis' },
   { id: 'final',          label: '🏆 Final' },
-  { id: 'agenda',         label: '📆 Agenda' },
 ];
 
 export default function FixturePage() {
@@ -156,13 +175,16 @@ export default function FixturePage() {
   const [resultados, setResultados] = useState<Record<string, { golesLocal: number; golesVisitante: number; video?: string }>>({});
   const [countdown, setCountdown] = useState(REFRESH / 1000);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [zona, setZona] = useState(ZONAS[0]);
 
-  // ── Fechas disponibles para la agenda ──
+  // ── Fechas disponibles ──
   const fechasDisponibles = useMemo(() => {
     const set = new Set(PARTIDOS_GRUPOS.map(p => soloFecha(p.fecha)));
     return Array.from(set).sort();
   }, []);
-  const [fechaAgenda, setFechaAgenda] = useState(fechasDisponibles[0] ?? '');
+  const hoy = new Date().toISOString().split('T')[0];
+  const fechaInicial = fechasDisponibles.find(f => f >= hoy) ?? fechasDisponibles[fechasDisponibles.length - 1] ?? '';
+  const [fechaSel, setFechaSel] = useState(fechaInicial);
 
   const fetchResultados = useCallback(async () => {
     try {
@@ -203,12 +225,11 @@ export default function FixturePage() {
 
   const partidosGrupo = enrich(gruposByLetter[grupoActivo] ?? []);
 
-  // Partidos del día seleccionado (solo grupos)
   const partidosDelDia = useMemo(() =>
-    enrich(PARTIDOS_GRUPOS.filter(p => soloFecha(p.fecha) === fechaAgenda))
+    enrich(PARTIDOS_GRUPOS.filter(p => soloFecha(p.fecha) === fechaSel))
       .sort((a, b) => a.fecha.localeCompare(b.fecha)),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [fechaAgenda, resultados]);
+  [fechaSel, resultados]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-950 to-black text-white">
@@ -241,34 +262,63 @@ export default function FixturePage() {
         {/* ── GRUPOS ── */}
         {vista === 'grupos' && (
           <>
-            {/* Selector de grupo */}
-            <div className="flex flex-wrap gap-2 mb-5">
-              {GRUPOS_LIST.filter(g => gruposByLetter[g]).map(g => {
-                const jugadosG = enrich(gruposByLetter[g] ?? []).filter(p => p.jugado).length;
+            {/* Selector de zona horaria */}
+            <div className="flex gap-2 mb-4 justify-center">
+              {ZONAS.map(z => (
+                <button key={z.id} onClick={() => setZona(z)}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                    zona.id === z.id ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  }`}>
+                  {z.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Selector de fechas */}
+            <div className="flex flex-wrap gap-2 mb-5 justify-center">
+              {fechasDisponibles.map(f => {
+                const jugados = PARTIDOS_GRUPOS.filter(p => soloFecha(p.fecha) === f && resultados[p.id]).length;
+                const total = PARTIDOS_GRUPOS.filter(p => soloFecha(p.fecha) === f).length;
+                const esHoy = f === hoy;
                 return (
-                  <button key={g} onClick={() => setGrupoActivo(g)}
-                    className={`w-11 h-11 rounded-xl font-black text-base transition-colors relative ${
-                      grupoActivo === g ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  <button key={f} onClick={() => setFechaSel(f)}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors relative ${
+                      fechaSel === f ? 'bg-yellow-400 text-black' : esHoy ? 'bg-green-700/50 text-green-300 border border-green-500/50' : 'bg-white/10 text-gray-300 hover:bg-white/20'
                     }`}>
-                    {g}
-                    {jugadosG > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full text-[9px] flex items-center justify-center text-white font-bold">
-                        {jugadosG === (gruposByLetter[g]?.length ?? 0) ? '✓' : jugadosG}
-                      </span>
-                    )}
+                    {esHoy && fechaSel !== f && <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />}
+                    {labelFechaCorta(f)}
+                    <span className="ml-1 text-[10px] opacity-70">{jugados}/{total}</span>
                   </button>
                 );
               })}
             </div>
 
-            <h2 className="text-2xl font-black text-green-400 mb-1">Grupo {grupoActivo}</h2>
+            {/* Título del día */}
+            <h2 className="text-lg font-black capitalize mb-4">{labelFecha(fechaSel)}</h2>
 
-            {/* Tabla de posiciones del grupo */}
-            <TablaGrupo partidos={partidosGrupo} />
-
-            {/* Partidos del grupo */}
-            <div className="space-y-3 mt-5">
-              {partidosGrupo.map(p => <PartidoCard key={p.id} p={p} />)}
+            {/* Partidos del día con horarios en zona seleccionada */}
+            <div className="space-y-3">
+              {partidosDelDia.map(p => (
+                <div key={p.id} className={`rounded-2xl border ${p.jugado ? 'bg-green-900/20 border-green-600/40' : 'bg-white/5 border-white/10'} p-4`}>
+                  <p className="text-xs text-green-400 font-bold uppercase tracking-widest mb-2">Grupo {p.grupo}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="flex-1 text-right font-bold text-lg leading-tight">{p.local}</span>
+                    <div className="text-center shrink-0 min-w-[80px]">
+                      {p.jugado
+                        ? <span className="bg-green-700/70 px-3 py-1.5 rounded-xl font-black text-2xl">{p.golesLocal} - {p.golesVisitante}</span>
+                        : <span className="text-gray-500 font-black text-xl">vs</span>}
+                    </div>
+                    <span className="flex-1 text-left font-bold text-lg leading-tight">{p.visitante}</span>
+                  </div>
+                  <div className="text-center mt-2 space-y-0.5">
+                    <p className="text-sm font-semibold text-yellow-400">
+                      {horaEnZona(p.fecha, zona.offset)} {zona.id}
+                      {p.jugado && <span className="text-green-400 ml-2 font-bold">✓ Finalizado</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">📍 {p.sede}, {p.ciudad}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
