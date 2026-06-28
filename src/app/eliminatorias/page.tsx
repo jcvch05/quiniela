@@ -136,6 +136,23 @@ export default function EliminatoriasPage() {
             {msg && <p className="text-center text-sm mt-2 font-semibold">{msg}</p>}
           </div>
         )}
+
+        {/* ── OCTAVOS — próxima fase ── */}
+        <div className="mt-10 rounded-2xl border border-white/10 bg-white/3 overflow-hidden opacity-60">
+          <div className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/10">
+            <div>
+              <h2 className="font-black text-lg text-gray-300">✖️ Octavos de Final</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Del 5 al 8 de julio de 2026</p>
+            </div>
+            <div className="bg-gray-700/50 border border-gray-600/40 text-gray-400 px-3 py-1.5 rounded-xl text-xs font-bold">
+              🔒 Abre cuando terminen los 16avos
+            </div>
+          </div>
+          <div className="px-5 py-6 text-center text-gray-500 text-sm">
+            Los cruces se definirán con los clasificados de los 16avos.<br />
+            <span className="text-xs opacity-70">Las apuestas se abrirán automáticamente.</span>
+          </div>
+        </div>
       </div>
     </main>
   );
