@@ -76,7 +76,7 @@ function VideoCard({ r }: { r: Resultado & { local: string; visitante: string; g
 
 export default function HighlightsPage() {
   const [resultados, setResultados] = useState<Resultado[]>([]);
-  const [fase, setFase] = useState<Fase>('grupos');
+  const [fase, setFase] = useState<Fase>('dieciseisavos');
   const [grupoActivo, setGrupoActivo] = useState<string>('A');
 
   useEffect(() => {

@@ -168,7 +168,7 @@ function PartidoCardElim({
 export default function ApuestasPage() {
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [resultados, setResultados] = useState<Record<string, Resultado>>({});
-  const [fase, setFase] = useState<Fase>('grupos');
+  const [fase, setFase] = useState<Fase>('dieciseisavos');
   const [grupoActivo, setGrupoActivo] = useState('A');
   const [loading, setLoading] = useState(true);
 

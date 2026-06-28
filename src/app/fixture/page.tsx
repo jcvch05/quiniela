@@ -170,7 +170,7 @@ const VISTAS: { id: Vista; label: string }[] = [
 ];
 
 export default function FixturePage() {
-  const [vista, setVista] = useState<Vista>('grupos');
+  const [vista, setVista] = useState<Vista>('dieciseisavos');
   const [grupoActivo, setGrupoActivo] = useState('A');
   const [resultados, setResultados] = useState<Record<string, { golesLocal: number; golesVisitante: number; video?: string }>>({});
   const [countdown, setCountdown] = useState(REFRESH / 1000);
