@@ -20,6 +20,8 @@ function youtubeId(url: string): string | null {
 
 function VideoCard({ r }: { r: Resultado & { local: string; visitante: string; grupo?: string; fecha: string; sede: string; ciudad: string } }) {
   const vid = youtubeId(r.video!);
+  const [playing, setPlaying] = useState(false);
+
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
       <div className="px-5 py-4 bg-green-900/30 border-b border-white/10">
@@ -40,13 +42,28 @@ function VideoCard({ r }: { r: Resultado & { local: string; visitante: string; g
       </div>
       {vid ? (
         <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-          <iframe
-            className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${vid}`}
-            title={`${r.local} vs ${r.visitante}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+          {playing ? (
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src={`https://www.youtube.com/embed/${vid}?autoplay=1`}
+              title={`${r.local} vs ${r.visitante}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <button onClick={() => setPlaying(true)} className="absolute inset-0 w-full h-full group">
+              <img
+                src={`https://img.youtube.com/vi/${vid}/hqdefault.jpg`}
+                alt={`${r.local} vs ${r.visitante}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-xl">
+                  <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7 ml-1"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       ) : (
         <div className="py-8 text-center text-gray-600 text-sm">Video próximamente</div>
