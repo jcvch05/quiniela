@@ -236,7 +236,6 @@ export default function FixturePage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-4">
           <h1 className="text-4xl md:text-5xl font-black mb-1">📅 Fixture 2026</h1>
-          <p className="text-green-300 text-sm">Horarios en hora Bolivia (BOT = GMT-4)</p>
         </div>
 
         {/* Indicador en vivo */}
