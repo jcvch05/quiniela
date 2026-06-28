@@ -61,7 +61,7 @@ function calcularTabla(partidos: Partido[]): Fila[] {
 }
 
 // ─── Componentes ─────────────────────────────────────────────────────────────
-function PartidoCard({ p, compact = false }: { p: Partido; compact?: boolean }) {
+function PartidoCard({ p, compact = false, zonaOffset = -4, zonaId = 'BOT' }: { p: Partido; compact?: boolean; zonaOffset?: number; zonaId?: string }) {
   return (
     <div className={`rounded-2xl border ${p.jugado ? 'bg-green-900/20 border-green-600/40' : 'bg-white/5 border-white/10'} ${compact ? 'p-3' : 'p-4 md:p-5'}`}>
       {p.grupo && !compact && <p className="text-xs text-green-400 font-bold uppercase tracking-widest mb-2">Grupo {p.grupo}</p>}
@@ -78,12 +78,12 @@ function PartidoCard({ p, compact = false }: { p: Partido; compact?: boolean }) 
         {!compact && (
           <p className="text-sm font-semibold text-gray-200 capitalize">
             {labelFecha(p.fecha)}
-            {p.fecha.includes('T') && <span className="text-yellow-400 ml-2">· {hora(p.fecha)}</span>}
+            {p.fecha.includes('T') && <span className="text-yellow-400 ml-2">· {horaEnZona(p.fecha, zonaOffset)} {zonaId}</span>}
             {p.jugado && <span className="ml-2 text-green-400 font-bold">✓ Finalizado</span>}
           </p>
         )}
         {compact && p.fecha.includes('T') && (
-          <p className="text-sm text-yellow-400 font-semibold">{hora(p.fecha)}{p.jugado && <span className="text-green-400 ml-2">✓</span>}</p>
+          <p className="text-sm text-yellow-400 font-semibold">{horaEnZona(p.fecha, zonaOffset)} {zonaId}{p.jugado && <span className="text-green-400 ml-2">✓</span>}</p>
         )}
         {(p.sede || p.ciudad) && (
           <p className="text-xs text-gray-500">📍 {p.sede}{p.ciudad ? `, ${p.ciudad}` : ''}</p>
@@ -247,6 +247,18 @@ export default function FixturePage() {
           <button onClick={fetchResultados} className="text-green-400 hover:text-green-300 underline ml-1">↻</button>
         </div>
 
+        {/* Selector de zona horaria — global */}
+        <div className="flex gap-2 mb-4 justify-center">
+          {ZONAS.map(z => (
+            <button key={z.id} onClick={() => setZona(z)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                zona.id === z.id ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              }`}>
+              {z.label}
+            </button>
+          ))}
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {VISTAS.map(v => (
@@ -262,8 +274,8 @@ export default function FixturePage() {
         {/* ── GRUPOS ── */}
         {vista === 'grupos' && (
           <>
-            {/* Selector de zona horaria */}
-            <div className="flex gap-2 mb-4 justify-center">
+            {/* Selector de zona horaria — REMOVED from here, now global */}
+            <div className="flex gap-2 mb-4 justify-center hidden">
               {ZONAS.map(z => (
                 <button key={z.id} onClick={() => setZona(z)}
                   className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
@@ -338,7 +350,7 @@ export default function FixturePage() {
                   jugado: !!r,
                   golesLocal: r?.golesLocal, golesVisitante: r?.golesVisitante,
                 };
-                return <PartidoCard key={p.id} p={partido} />;
+                return <PartidoCard key={p.id} p={partido} zonaOffset={zona.offset} zonaId={zona.id} />;
               })}
             </div>
           </>
@@ -353,7 +365,7 @@ export default function FixturePage() {
               {enrich(OCTAVOS).map((p, i) => (
                 <div key={p.id}>
                   {i % 2 === 0 && <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 mt-4">Llave {Math.floor(i/2) + 1}</p>}
-                  <PartidoCard p={p} />
+                  <PartidoCard p={p} zonaOffset={zona.offset} zonaId={zona.id} />
                 </div>
               ))}
             </div>
@@ -366,7 +378,7 @@ export default function FixturePage() {
             <h2 className="text-2xl font-black text-orange-400 mb-2">Cuartos de Final</h2>
             <p className="text-gray-400 text-sm mb-5">Del 4 al 5 de julio de 2026</p>
             <div className="space-y-3">
-              {enrich(CUARTOS).map(p => <PartidoCard key={p.id} p={p} />)}
+              {enrich(CUARTOS).map(p => <PartidoCard key={p.id} p={p} zonaOffset={zona.offset} zonaId={zona.id} />)}
             </div>
           </>
         )}
@@ -379,12 +391,12 @@ export default function FixturePage() {
               {enrich(SEMIS).map((p, i) => (
                 <div key={p.id}>
                   <p className="text-sm text-gray-400 mb-2 font-semibold">Semifinal {i + 1}</p>
-                  <PartidoCard p={p} />
+                  <PartidoCard p={p} zonaOffset={zona.offset} zonaId={zona.id} />
                 </div>
               ))}
             </div>
             <p className="text-sm text-gray-400 mb-2 font-semibold">🥉 Tercer Lugar</p>
-            <PartidoCard p={enrich([TERCER])[0]} />
+            <PartidoCard p={enrich([TERCER])[0]} zonaOffset={zona.offset} zonaId={zona.id} />
           </>
         )}
 
@@ -394,7 +406,7 @@ export default function FixturePage() {
             <div className="text-7xl mb-4">🏆</div>
             <h2 className="text-4xl font-black text-yellow-400 mb-2">Gran Final</h2>
             <p className="text-gray-400 mb-8">19 de julio de 2026 · MetLife Stadium, Nueva York</p>
-            <PartidoCard p={enrich([FINAL])[0]} />
+            <PartidoCard p={enrich([FINAL])[0]} zonaOffset={zona.offset} zonaId={zona.id} />
           </div>
         )}
 
