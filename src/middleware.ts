@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   '/api/auth/',                // login, logout y me
   '/api/participantes',        // tabla pública de posiciones
   '/api/resultados-publicos',  // fixture público
+  '/api/resultados-eliminatorias', // Admin: cargar resultados de eliminatorias
   '/registro-roxana',          // página especial para Roxana
   '/api/registro-roxana',      // API de pronósticos de Roxana
 ];
