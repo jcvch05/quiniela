@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { PARTIDOS_GRUPOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS } from '@/lib/partidos';
 
 interface DashData {
   timestamp: string;
@@ -407,20 +407,32 @@ export default function DashboardPage() {
                   <select value={resultadoForm.partidoId} onChange={e => setResultadoForm(f => ({ ...f, partidoId: e.target.value }))}
                     className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white w-full max-w-sm">
                     <option value="">— Selecciona un partido —</option>
-                    {PARTIDOS_GRUPOS.map(p => {
-                      const jugado = resultadosSistema[p.id];
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {jugado ? '✓ ' : ''}{p.id}: {p.local} vs {p.visitante}{jugado ? ` (${jugado.golesLocal}-${jugado.golesVisitante})` : ''}
-                        </option>
-                      );
-                    })}
+                    <optgroup label="⚔️ Dieciseisavos">
+                      {PARTIDOS_DIECISEISAVOS.map(p => {
+                        const jugado = resultadosSistema[p.id];
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {jugado ? '✓ ' : ''}{p.id}: {p.local} vs {p.visitante}{jugado ? ` (${jugado.golesLocal}-${jugado.golesVisitante})` : ''}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                    <optgroup label="📊 Fase Grupos">
+                      {PARTIDOS_GRUPOS.map(p => {
+                        const jugado = resultadosSistema[p.id];
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {jugado ? '✓ ' : ''}{p.id}: {p.local} vs {p.visitante}{jugado ? ` (${jugado.golesLocal}-${jugado.golesVisitante})` : ''}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="flex flex-wrap gap-3 items-end">
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">
-                      {resultadoForm.partidoId ? PARTIDOS_GRUPOS.find(p => p.id === resultadoForm.partidoId)?.local ?? 'Local' : 'Local'}
+                      {resultadoForm.partidoId ? ([...PARTIDOS_GRUPOS, ...PARTIDOS_DIECISEISAVOS].find(p => p.id === resultadoForm.partidoId)?.local ?? 'Local') : 'Local'}
                     </label>
                     <input value={resultadoForm.golesLocal} onChange={e => setResultadoForm(f => ({ ...f, golesLocal: e.target.value }))}
                       type="number" min="0" max="20" placeholder="0"
@@ -429,7 +441,7 @@ export default function DashboardPage() {
                   <span className="text-2xl font-black text-gray-400 pb-1">-</span>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">
-                      {resultadoForm.partidoId ? PARTIDOS_GRUPOS.find(p => p.id === resultadoForm.partidoId)?.visitante ?? 'Visitante' : 'Visitante'}
+                      {resultadoForm.partidoId ? ([...PARTIDOS_GRUPOS, ...PARTIDOS_DIECISEISAVOS].find(p => p.id === resultadoForm.partidoId)?.visitante ?? 'Visitante') : 'Visitante'}
                     </label>
                     <input value={resultadoForm.golesVisitante} onChange={e => setResultadoForm(f => ({ ...f, golesVisitante: e.target.value }))}
                       type="number" min="0" max="20" placeholder="0"
