@@ -15,6 +15,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
   }
 
-  await updateDocument('participantes', uid, { pronosticosDieciseisavos }, token);
+  // Garantizar que los goles se guardan como enteros, nunca como strings
+  const pronosticosInt: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+  for (const [pid, pred] of Object.entries(pronosticosDieciseisavos as Record<string, { golesLocal: unknown; golesVisitante: unknown }>)) {
+    pronosticosInt[pid] = {
+      golesLocal: Number(pred.golesLocal),
+      golesVisitante: Number(pred.golesVisitante),
+    };
+  }
+
+  await updateDocument('participantes', uid, { pronosticosDieciseisavos: pronosticosInt }, token);
   return NextResponse.json({ ok: true });
 }
