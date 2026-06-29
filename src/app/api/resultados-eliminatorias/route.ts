@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateDocument, createDocument, getDocument, getCollection } from '@/lib/firebase';
 import { verifyAdmin } from '@/lib/adminAuth';
-import { getPartidoDieciseisavos, determinarGanador } from '@/lib/eliminatorias';
-import { recalcularEliminatorias } from '@/lib/recalcularEliminatorias';
+import { recalcularTodos } from '@/lib/recalcularPuntos';
 
 export async function POST(req: NextRequest) {
   if (!await verifyAdmin(req)) {
@@ -48,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Recalcular puntos de todos
-    await recalcularEliminatorias();
+    await recalcularTodos();
 
     return NextResponse.json({ ok: true, fase: determinedFase });
   } catch (error) {
