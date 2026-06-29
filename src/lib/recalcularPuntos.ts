@@ -1,16 +1,33 @@
 import { getCollection, updateDocument } from './firebase';
-import { calcularPuntosPartido } from './puntuacion';
+import { calcularPuntosPartido, calcularPuntosEliminatoria } from './puntuacion';
 import { Participante, Partido } from '@/types';
+import { calcularClasificadosPorFase } from './eliminatorias';
+
+interface ResultadoEliminatoria {
+  id: string;
+  fase: 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final';
+  ganador: string;
+}
 
 export async function recalcularTodos() {
-  const [participantes, resultados] = await Promise.all([
+  const [participantes, resultados, resultadosEliminatorias] = await Promise.all([
     getCollection('participantes'),
     getCollection('resultados'),
+    getCollection('resultados-eliminatorias').catch(() => []),
   ]);
 
   const resultadosMap = Object.fromEntries(
     (resultados as Partido[]).map(r => [r.id, r])
   );
+
+  const resultadosEliminatoriasList = (resultadosEliminatorias ?? []) as ResultadoEliminatoria[];
+
+  // Calcular clasificados por fase
+  const clasificados = {
+    octavos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'octavos'),
+    cuartos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'cuartos'),
+    semis: calcularClasificadosPorFase(resultadosEliminatoriasList, 'semis'),
+  };
 
   for (const participante of participantes as Participante[]) {
     let puntosGrupos = 0;
@@ -25,15 +42,26 @@ export async function recalcularTodos() {
       }
     }
 
+    // Calcular puntos de eliminatorias
+    const puntosOctavos = calcularPuntosEliminatoria(participante.octavos, clasificados.octavos);
+    const puntosCuartos = calcularPuntosEliminatoria(participante.cuartos, clasificados.cuartos);
+    const puntosSemis = calcularPuntosEliminatoria(participante.semis, clasificados.semis);
+
     const totalPuntos = puntosGrupos +
-      (participante.desglose?.octavos ?? 0) +
-      (participante.desglose?.cuartos ?? 0) +
-      (participante.desglose?.semis ?? 0) +
+      puntosOctavos +
+      puntosCuartos +
+      puntosSemis +
       (participante.desglose?.especiales ?? 0);
 
     await updateDocument('participantes', participante.id, {
       puntos: totalPuntos,
-      desglose: { ...(participante.desglose ?? {}), grupos: puntosGrupos },
+      desglose: {
+        ...(participante.desglose ?? {}),
+        grupos: puntosGrupos,
+        octavos: puntosOctavos,
+        cuartos: puntosCuartos,
+        semis: puntosSemis,
+      },
     });
   }
 }

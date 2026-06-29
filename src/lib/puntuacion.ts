@@ -44,8 +44,9 @@ export function calcularPuntosEspeciales(
 }
 
 export function calcularPuntosEliminatoria(
-  pronostico: string[],
+  pronostico: string[] | undefined,
   clasificados: string[]
 ): number {
+  if (!pronostico || !Array.isArray(pronostico)) return 0;
   return pronostico.filter(e => clasificados.includes(e)).length * 10;
 }
