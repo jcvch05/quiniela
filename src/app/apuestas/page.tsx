@@ -19,17 +19,21 @@ interface Resultado {
 type Fase = 'grupos' | 'dieciseisavos';
 const GRUPOS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
-function pts(gl: number, gv: number, pl: number, pv: number): number {
-  if (gl === pl && gv === pv) return 8;
-  if (gl - gv === pl - pv) return 5;
-  if (gl !== gv && ((gl > gv) === (pl > pv))) return 3;
+function pts(gl: number, gv: number, pl: number | string, pv: number | string): number {
+  const pln = Number(pl), pvn = Number(pv);
+  if (isNaN(pln) || isNaN(pvn)) return 0;
+  if (gl === pln && gv === pvn) return 8;
+  if (gl - gv === pln - pvn) return 5;
+  if (gl !== gv && ((gl > gv) === (pln > pvn))) return 3;
   return 0;
 }
 
-function ptsElim(gl: number, gv: number, pl: number, pv: number): number {
-  if (gl === pl && gv === pv) return 10;
-  if (gl - gv === pl - pv) return 5;
-  if (gl !== gv && ((gl > gv) === (pl > pv))) return 3;
+function ptsElim(gl: number, gv: number, pl: number | string, pv: number | string): number {
+  const pln = Number(pl), pvn = Number(pv);
+  if (isNaN(pln) || isNaN(pvn)) return 0;
+  if (gl === pln && gv === pvn) return 10;
+  if (gl - gv === pln - pvn) return 5;
+  if (gl !== gv && ((gl > gv) === (pln > pvn))) return 3;
   return 0;
 }
 
