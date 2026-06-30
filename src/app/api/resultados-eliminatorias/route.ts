@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Guardar o actualizar resultado
+    // Guardar o actualizar resultado en Firestore
     try {
       await getDocument('resultados-eliminatorias', partidoId);
       await updateDocument('resultados-eliminatorias', partidoId, {
