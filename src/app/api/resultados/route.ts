@@ -4,6 +4,7 @@ import { recalcularTodos } from '@/lib/recalcularPuntos';
 import { verifyAdmin } from '@/lib/adminAuth';
 
 export async function POST(req: NextRequest) {
+  // 2026-06-29: Support for eliminatorias (dieciseisavos, octavos, etc.)
   if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const body = await req.json();
