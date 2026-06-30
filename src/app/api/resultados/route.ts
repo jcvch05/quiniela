@@ -18,11 +18,6 @@ export async function POST(req: NextRequest) {
   const firstChar = partidoId.charAt(0);
   const esEliminatoria = ['D', 'O', 'C', 'S', 'F'].includes(firstChar);
 
-  // 2026-06-29: TESTING - return test response to confirm new code is running
-  if (firstChar === 'D') {
-    return NextResponse.json({ test_response: 'NEW CODE IS RUNNING', firstChar, esEliminatoria });
-  }
-
   if (esEliminatoria) {
     // Manejar eliminatoria - requiere ganador
     if (!ganador || typeof ganador !== 'string') {
