@@ -4,54 +4,29 @@ import { recalcularTodos } from '@/lib/recalcularPuntos';
 import { verifyAdmin } from '@/lib/adminAuth';
 
 export async function POST(req: NextRequest) {
-  // 2026-06-29: Support for eliminatorias (dieciseisavos, octavos, etc.)
   if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const body = await req.json();
-  const { partidoId, golesLocal, golesVisitante, video, ganador } = body;
+  const { partidoId, golesLocal, golesVisitante, video } = body;
 
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
     return NextResponse.json({ error: 'partidoId inválido' }, { status: 400 });
   }
 
-  // Detectar si es eliminatoria por el primer carácter: D, O, C, S, F (no G)
+  const gl = Number(golesLocal), gv = Number(golesVisitante);
+  if (isNaN(gl) || isNaN(gv) || gl < 0 || gl > 20 || gv < 0 || gv > 20) {
+    return NextResponse.json({ error: 'Marcador inválido (0-20)' }, { status: 400 });
+  }
+
+  // Detectar si es dieciseisavos por el primer carácter: D (G=grupos)
   const firstChar = partidoId.charAt(0);
-  const esEliminatoria = ['D', 'O', 'C', 'S', 'F'].includes(firstChar);
+  const collection = firstChar === 'D' ? 'resultados-dieciseisavos' : 'resultados';
 
-  if (esEliminatoria) {
-    // Manejar eliminatoria - requiere ganador
-    if (!ganador || typeof ganador !== 'string') {
-      return NextResponse.json({ error: 'ganador requerido para eliminatorias' }, { status: 400 });
-    }
-
-    const faseMap: Record<string, string> = {
-      D: 'dieciseisavos', O: 'octavos', C: 'cuartos', S: 'semis', F: 'final'
-    };
-    const fase = faseMap[firstChar];
-
-    try {
-      await getDocument('resultados-eliminatorias', partidoId);
-      await updateDocument('resultados-eliminatorias', partidoId, { fase, ganador });
-    } catch {
-      await createDocument('resultados-eliminatorias', partidoId, { fase, ganador });
-    }
-  } else {
-    // Manejar grupo - requiere goles
-    if (golesLocal === undefined || golesVisitante === undefined) {
-      return NextResponse.json({ error: 'golesLocal y golesVisitante requeridos para grupos' }, { status: 400 });
-    }
-
-    const gl = Number(golesLocal), gv = Number(golesVisitante);
-    if (isNaN(gl) || isNaN(gv) || gl < 0 || gl > 20 || gv < 0 || gv > 20) {
-      return NextResponse.json({ error: 'Marcador inválido (0-20)' }, { status: 400 });
-    }
-
-    try {
-      await getDocument('resultados', partidoId);
-      await updateDocument('resultados', partidoId, { golesLocal: gl, golesVisitante: gv, jugado: true, ...(video ? { video } : {}) });
-    } catch {
-      await createDocument('resultados', partidoId, { golesLocal: gl, golesVisitante: gv, jugado: true, ...(video ? { video } : {}) });
-    }
+  try {
+    await getDocument(collection, partidoId);
+    await updateDocument(collection, partidoId, { golesLocal: gl, golesVisitante: gv, jugado: true, ...(video ? { video } : {}) });
+  } catch {
+    await createDocument(collection, partidoId, { golesLocal: gl, golesVisitante: gv, jugado: true, ...(video ? { video } : {}) });
   }
 
   // Recalcular puntos de todos
@@ -62,9 +37,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  const [grupos, eliminatorias] = await Promise.all([
+  const [grupos, dieciseisavos] = await Promise.all([
     getCollection('resultados'),
-    getCollection('resultados-eliminatorias').catch(() => []),
+    getCollection('resultados-dieciseisavos').catch(() => []),
   ]);
-  return NextResponse.json({ grupos, eliminatorias });
+  return NextResponse.json({ grupos, dieciseisavos });
 }
