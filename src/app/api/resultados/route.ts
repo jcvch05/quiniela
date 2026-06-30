@@ -6,18 +6,19 @@ import { verifyAdmin } from '@/lib/adminAuth';
 export async function POST(req: NextRequest) {
   if (!await verifyAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-  const { partidoId, golesLocal, golesVisitante, video, ganador } = await req.json();
+  const body = await req.json();
+  const { partidoId, golesLocal, golesVisitante, video, ganador } = body;
+
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
     return NextResponse.json({ error: 'partidoId inválido' }, { status: 400 });
   }
 
-  // Detectar si es eliminatoria (D01-D16, O01-O08, etc.) o grupo (G01-G72)
-  const regexEliminatoria = /^[DOCSF]\d{2}$/;
-  const esEliminatoria = regexEliminatoria.test(partidoId);
-  console.log(`[DEBUG] partidoId=${partidoId}, regex match=${esEliminatoria}, ganador=${ganador}`);
+  // Detectar si es eliminatoria por el primer carácter: D, O, C, S, F (no G)
+  const firstChar = partidoId.charAt(0);
+  const esEliminatoria = ['D', 'O', 'C', 'S', 'F'].includes(firstChar);
 
   if (esEliminatoria) {
-    // Manejar eliminatoria (dieciseisavos, octavos, etc.) - requiere ganador
+    // Manejar eliminatoria - requiere ganador
     if (!ganador || typeof ganador !== 'string') {
       return NextResponse.json({ error: 'ganador requerido para eliminatorias' }, { status: 400 });
     }
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     const faseMap: Record<string, string> = {
       D: 'dieciseisavos', O: 'octavos', C: 'cuartos', S: 'semis', F: 'final'
     };
-    const fase = faseMap[partidoId[0]];
+    const fase = faseMap[firstChar];
 
     try {
       await getDocument('resultados-eliminatorias', partidoId);
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
     }
   } else {
     // Manejar grupo - requiere goles
+    if (golesLocal === undefined || golesVisitante === undefined) {
+      return NextResponse.json({ error: 'golesLocal y golesVisitante requeridos para grupos' }, { status: 400 });
+    }
+
     const gl = Number(golesLocal), gv = Number(golesVisitante);
     if (isNaN(gl) || isNaN(gv) || gl < 0 || gl > 20 || gv < 0 || gv > 20) {
       return NextResponse.json({ error: 'Marcador inválido (0-20)' }, { status: 400 });
@@ -48,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Recalcular puntos
+  // Recalcular puntos de todos
   await recalcularTodos();
 
   return NextResponse.json({ ok: true });
