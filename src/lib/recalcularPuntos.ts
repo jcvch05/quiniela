@@ -23,10 +23,11 @@ export async function recalcularTodos() {
   const resultadosEliminatoriasList = (resultadosEliminatorias ?? []) as ResultadoEliminatoria[];
 
   // Calcular clasificados por fase
+  // Nota: ganadores de dieciseisavos avanzan a octavos, ganadores de octavos avanzan a cuartos, etc.
   const clasificados = {
-    octavos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'octavos'),
-    cuartos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'cuartos'),
-    semis: calcularClasificadosPorFase(resultadosEliminatoriasList, 'semis'),
+    octavos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'dieciseisavos'),
+    cuartos: calcularClasificadosPorFase(resultadosEliminatoriasList, 'octavos'),
+    semis: calcularClasificadosPorFase(resultadosEliminatoriasList, 'cuartos'),
   };
 
   for (const participante of participantes as Participante[]) {
