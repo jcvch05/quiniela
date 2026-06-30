@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const esEliminatoria = /^[DOCSF]\d{2}$/.test(partidoId);
 
   if (esEliminatoria) {
-    // Manejar eliminatoria - requiere ganador
+    // Manejar eliminatoria (dieciseisavos, octavos, etc.) - requiere ganador
     if (!ganador || typeof ganador !== 'string') {
       return NextResponse.json({ error: 'ganador requerido para eliminatorias' }, { status: 400 });
     }
