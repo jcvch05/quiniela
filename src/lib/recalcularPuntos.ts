@@ -54,15 +54,19 @@ export async function recalcularTodos() {
       puntosSemis +
       (participante.desglose?.especiales ?? 0);
 
+    const nuevoDesglose = {
+      grupos: puntosGrupos,
+      octavos: puntosOctavos,
+      cuartos: puntosCuartos,
+      semis: puntosSemis,
+      especiales: participante.desglose?.especiales ?? 0,
+    };
+
+    console.log(`[RECALC] ${participante.nombre}: total=${totalPuntos}, desglose=${JSON.stringify(nuevoDesglose)}`);
+
     await updateDocument('participantes', participante.id, {
       puntos: totalPuntos,
-      desglose: {
-        grupos: puntosGrupos,
-        octavos: puntosOctavos,
-        cuartos: puntosCuartos,
-        semis: puntosSemis,
-        especiales: participante.desglose?.especiales ?? 0,
-      },
+      desglose: nuevoDesglose,
     });
   }
 }
