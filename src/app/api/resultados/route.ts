@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Detectar si es eliminatoria (D01-D16, O01-O08, etc.) o grupo (G01-G72)
-  const esEliminatoria = /^[DOCLSF]\d{2}$/.test(partidoId);
+  const esEliminatoria = /^[DOCSF]\d{2}$/.test(partidoId);
 
   if (esEliminatoria) {
     // Manejar eliminatoria - requiere ganador
