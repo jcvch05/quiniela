@@ -57,11 +57,11 @@ export async function recalcularTodos() {
     await updateDocument('participantes', participante.id, {
       puntos: totalPuntos,
       desglose: {
-        ...(participante.desglose ?? {}),
         grupos: puntosGrupos,
         octavos: puntosOctavos,
         cuartos: puntosCuartos,
         semis: puntosSemis,
+        especiales: participante.desglose?.especiales ?? 0,
       },
     });
   }
