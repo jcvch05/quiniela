@@ -61,111 +61,94 @@ function ptsPartido(gl: number, gv: number, pl: number, pv: number, es16: boolea
   return 0;
 }
 
-function ModalApuestas({ partido, onClose }: { partido: Partido & { golesLocal?: number; golesVisitante?: number }; onClose: () => void }) {
+// ─── Tarjeta de partido con apuestas inline ───────────────────────────────────
+function PartidoCard({ p }: { p: Partido }) {
+  const [abierto, setAbierto] = useState(false);
   const [preds, setPreds] = useState<PredParticipante[]>([]);
-  const [loading, setLoading] = useState(true);
-  const es16 = partido.id.startsWith('D');
-  const jugado = partido.jugado && partido.golesLocal !== undefined;
+  const [loadingPreds, setLoadingPreds] = useState(false);
+  const [cargado, setCargado] = useState(false);
+  const es16 = p.id.startsWith('D');
+  const jugado = p.jugado && p.golesLocal !== undefined;
 
-  useEffect(() => {
-    fetch('/api/participantes', { cache: 'no-store' })
-      .then(r => r.json())
-      .then((data: Array<{ nombre: string; pronosticosGrupos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosDieciseisavos?: Record<string,{golesLocal:number;golesVisitante:number}> }>) => {
-        const resultado = jugado ? { gl: partido.golesLocal!, gv: partido.golesVisitante! } : null;
-        const items: PredParticipante[] = data.map(p => {
-          const pred = es16
-            ? p.pronosticosDieciseisavos?.[partido.id]
-            : p.pronosticosGrupos?.[partido.id];
-          const pts = (resultado && pred)
-            ? ptsPartido(resultado.gl, resultado.gv, pred.golesLocal, pred.golesVisitante, es16)
-            : 0;
-          return { nombre: p.nombre, pred, pts };
-        });
-        items.sort((a, b) => b.pts - a.pts || (a.pred ? 0 : 1) - (b.pred ? 0 : 1));
-        setPreds(items);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [partido.id, es16, jugado, partido.golesLocal, partido.golesVisitante]);
+  function toggle() {
+    setAbierto(prev => {
+      const next = !prev;
+      if (next && !cargado) {
+        setLoadingPreds(true);
+        fetch('/api/participantes', { cache: 'no-store' })
+          .then(r => r.json())
+          .then((data: Array<{ nombre: string; pronosticosGrupos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosDieciseisavos?: Record<string,{golesLocal:number;golesVisitante:number}> }>) => {
+            const res = jugado ? { gl: p.golesLocal!, gv: p.golesVisitante! } : null;
+            const items: PredParticipante[] = data.map(part => {
+              const pred = es16 ? part.pronosticosDieciseisavos?.[p.id] : part.pronosticosGrupos?.[p.id];
+              const pts = res && pred ? ptsPartido(res.gl, res.gv, pred.golesLocal, pred.golesVisitante, es16) : 0;
+              return { nombre: part.nombre, pred, pts };
+            });
+            items.sort((a, b) => b.pts - a.pts || (a.pred ? 0 : 1) - (b.pred ? 0 : 1));
+            setPreds(items);
+            setCargado(true);
+          })
+          .catch(() => {})
+          .finally(() => setLoadingPreds(false));
+      }
+      return next;
+    });
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/70 px-2" onClick={onClose}>
-      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="sticky top-0 bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400">{partido.id} · {partido.ciudad}</p>
-            <p className="font-black text-base">{bandera(partido.local)} {partido.local} vs {partido.visitante} {bandera(partido.visitante)}</p>
-            {jugado && (
-              <p className="text-yellow-400 font-black text-xl">{partido.golesLocal} – {partido.golesVisitante}</p>
-            )}
+    <div className={`rounded-2xl border transition-all ${p.jugado ? 'bg-green-900/20 border-green-600/40' : 'bg-white/5 border-white/10'}`}>
+      {/* Cabecera del partido */}
+      <button onClick={toggle} className="w-full p-4 text-left">
+        {p.grupo && <p className="text-xs text-green-400 font-bold uppercase tracking-widest mb-2">Grupo {p.grupo}</p>}
+        <div className="flex items-center gap-2">
+          <span className="flex-1 text-right font-bold text-base leading-tight">{bandera(p.local)} {p.local}</span>
+          <div className="shrink-0 min-w-[72px] text-center">
+            {jugado
+              ? <span className="bg-green-700/70 px-3 py-1 rounded-xl font-black text-xl">{p.golesLocal} – {p.golesVisitante}</span>
+              : <span className="text-gray-500 font-black text-lg">vs</span>}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl ml-3">✕</button>
+          <span className="flex-1 font-bold text-base leading-tight">{p.visitante} {bandera(p.visitante)}</span>
+          <span className={`ml-2 text-gray-400 text-lg transition-transform ${abierto ? 'rotate-180' : ''}`}>⌄</span>
         </div>
-
-        {/* Apuestas */}
-        <div className="p-4 space-y-2">
-          <p className="text-xs text-gray-500 mb-3">
-            {jugado ? 'Apuestas vs resultado final' : 'Apuestas registradas (partido no jugado aún)'}
+        <div className="text-center mt-2 space-y-0.5">
+          <p className="text-sm text-gray-300 capitalize">
+            {labelFecha(p.fecha)}
+            {p.fecha.includes('T') && <span className="text-yellow-400 ml-2">· {hora(p.fecha)}</span>}
+            {jugado && <span className="text-green-400 ml-2">✓</span>}
           </p>
-          {loading && <p className="text-gray-400 text-sm text-center py-4">Cargando...</p>}
-          {!loading && preds.map(p => (
-            <div key={p.nombre} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
-              jugado && p.pred
-                ? p.pts >= (es16 ? 10 : 8) ? 'bg-yellow-900/30 border border-yellow-500/40'
-                : p.pts === 5 ? 'bg-blue-900/30 border border-blue-500/30'
-                : p.pts === 3 ? 'bg-green-900/20 border border-green-600/20'
-                : p.pts === 0 && p.pred ? 'bg-white/3 border border-white/5'
+          {(p.sede || p.ciudad) && <p className="text-xs text-gray-500">📍 {p.sede}{p.ciudad ? `, ${p.ciudad}` : ''}</p>}
+        </div>
+      </button>
+
+      {/* Apuestas desplegables */}
+      {abierto && (
+        <div className="border-t border-white/10 px-4 py-3 space-y-2">
+          <p className="text-xs text-gray-500 mb-2">
+            {jugado ? 'Apuestas vs resultado final' : 'Apuestas registradas'}
+          </p>
+          {loadingPreds && <p className="text-gray-400 text-sm text-center py-2">Cargando...</p>}
+          {!loadingPreds && preds.map(part => (
+            <div key={part.nombre} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
+              jugado && part.pred
+                ? part.pts >= (es16 ? 10 : 8) ? 'bg-yellow-900/30 border border-yellow-500/40'
+                : part.pts === 5 ? 'bg-blue-900/30 border border-blue-500/30'
+                : part.pts === 3 ? 'bg-green-900/20 border border-green-600/20'
                 : 'bg-white/3 border border-white/5'
                 : 'bg-white/5 border border-white/5'
             }`}>
-              <span className="flex-1 text-sm font-semibold truncate">{p.nombre}</span>
-              {p.pred
-                ? <span className="font-black text-base text-white">{p.pred.golesLocal} – {p.pred.golesVisitante}</span>
-                : <span className="text-gray-600 text-sm">Sin apuesta</span>
-              }
-              {jugado && p.pred && (
-                <span className={`text-sm font-black w-10 text-right ${
-                  p.pts >= (es16 ? 10 : 8) ? 'text-yellow-400' : p.pts >= 5 ? 'text-blue-300' : p.pts >= 3 ? 'text-green-400' : 'text-gray-600'
-                }`}>
-                  +{p.pts}
-                </span>
+              <span className="flex-1 text-sm font-semibold truncate">{part.nombre}</span>
+              {part.pred
+                ? <span className="font-black text-base">{part.pred.golesLocal} – {part.pred.golesVisitante}</span>
+                : <span className="text-gray-600 text-sm">Sin apuesta</span>}
+              {jugado && part.pred && (
+                <span className={`text-sm font-black w-8 text-right ${
+                  part.pts >= (es16 ? 10 : 8) ? 'text-yellow-400' : part.pts >= 5 ? 'text-blue-300' : part.pts >= 3 ? 'text-green-400' : 'text-gray-600'
+                }`}>+{part.pts}</span>
               )}
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tarjeta de partido ───────────────────────────────────────────────────────
-function PartidoCard({ p, onClick }: { p: Partido; onClick?: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      className={`rounded-2xl border transition-all ${
-        p.jugado ? 'bg-green-900/20 border-green-600/40' : 'bg-white/5 border-white/10'
-      } ${onClick ? 'cursor-pointer hover:border-yellow-400/60 hover:bg-white/10 active:scale-[0.98]' : ''} p-4`}>
-      {p.grupo && <p className="text-xs text-green-400 font-bold uppercase tracking-widest mb-2">Grupo {p.grupo}</p>}
-      <div className="flex items-center gap-2">
-        <span className="flex-1 text-right font-bold text-base leading-tight">{bandera(p.local)} {p.local}</span>
-        <div className="shrink-0 min-w-[72px] text-center">
-          {p.jugado && p.golesLocal !== undefined
-            ? <span className="bg-green-700/70 px-3 py-1 rounded-xl font-black text-xl">{p.golesLocal} – {p.golesVisitante}</span>
-            : <span className="text-gray-500 font-black text-lg">vs</span>}
-        </div>
-        <span className="flex-1 font-bold text-base leading-tight">{p.visitante} {bandera(p.visitante)}</span>
-      </div>
-      <div className="text-center mt-2 space-y-0.5">
-        <p className="text-sm text-gray-300 capitalize">
-          {labelFecha(p.fecha)}
-          {p.fecha.includes('T') && <span className="text-yellow-400 ml-2">· {hora(p.fecha)}</span>}
-          {p.jugado && <span className="text-green-400 ml-2">✓</span>}
-        </p>
-        {(p.sede || p.ciudad) && <p className="text-xs text-gray-500">📍 {p.sede}{p.ciudad ? `, ${p.ciudad}` : ''}</p>}
-        {onClick && <p className="text-xs text-yellow-400/70 mt-1">Toca para ver apuestas →</p>}
-      </div>
+      )}
     </div>
   );
 }
@@ -223,7 +206,6 @@ export default function FixturePage() {
   const [resultados, setResultados] = useState<Record<string, { golesLocal: number; golesVisitante: number; jugado?: boolean }>>({});
   const [countdown, setCountdown] = useState(REFRESH / 1000);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [partidoModal, setPartidoModal] = useState<Partido | null>(null);
 
   const fetchResultados = useCallback(async () => {
     try {
@@ -327,7 +309,7 @@ export default function FixturePage() {
 
             <div className="space-y-3 mt-5">
               {partidosGrupo.map(p => (
-                <PartidoCard key={p.id} p={p} onClick={() => setPartidoModal(p)} />
+                <PartidoCard key={p.id} p={p} />
               ))}
             </div>
           </>
@@ -340,7 +322,7 @@ export default function FixturePage() {
             <p className="text-gray-400 text-sm mb-5">28 jun – 3 jul 2026 · Toca un partido para ver las apuestas</p>
             <div className="space-y-3">
               {partidos16.map(p => (
-                <PartidoCard key={p.id} p={p} onClick={() => setPartidoModal(p)} />
+                <PartidoCard key={p.id} p={p} />
               ))}
             </div>
           </>
@@ -353,7 +335,7 @@ export default function FixturePage() {
             <p className="text-gray-400 text-sm mb-5">4–5 de julio de 2026</p>
             <div className="space-y-3">
               {enrichArr(CUARTOS).map(p => (
-                <PartidoCard key={p.id} p={p} onClick={() => setPartidoModal(p)} />
+                <PartidoCard key={p.id} p={p} />
               ))}
             </div>
           </>
@@ -367,7 +349,7 @@ export default function FixturePage() {
               {enrichArr(SEMIS).map((p, i) => (
                 <div key={p.id}>
                   <p className="text-sm text-gray-400 mb-2 font-semibold">Semifinal {i + 1}</p>
-                  <PartidoCard p={p} onClick={() => setPartidoModal(p)} />
+                  <PartidoCard p={p} />
                 </div>
               ))}
             </div>
@@ -380,15 +362,11 @@ export default function FixturePage() {
             <div className="text-7xl mb-4">🏆</div>
             <h2 className="text-4xl font-black text-yellow-400 mb-2">Gran Final</h2>
             <p className="text-gray-400 mb-8">19 de julio de 2026 · MetLife Stadium, Nueva York</p>
-            <PartidoCard p={enrichArr([FINAL])[0]} onClick={() => setPartidoModal(enrichArr([FINAL])[0])} />
+            <PartidoCard p={enrichArr([FINAL])[0]} />
           </div>
         )}
       </div>
 
-      {/* Modal apuestas */}
-      {partidoModal && (
-        <ModalApuestas partido={partidoModal} onClose={() => setPartidoModal(null)} />
-      )}
     </main>
   );
 }
