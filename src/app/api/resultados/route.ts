@@ -11,7 +11,7 @@ function checkAuth(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-  const { partidoId, golesLocal, golesVisitante } = await req.json();
+  const { partidoId, golesLocal, golesVisitante, video } = await req.json();
   if (!partidoId || typeof partidoId !== 'string' || !/^[A-Z0-9]{2,4}$/.test(partidoId)) {
     return NextResponse.json({ error: 'partidoId inválido' }, { status: 400 });
   }
@@ -20,16 +20,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Marcador inválido (0-20)' }, { status: 400 });
   }
 
+  const dataToSave: Record<string, unknown> = { golesLocal: gl, golesVisitante: gv, jugado: true };
+  if (video && typeof video === 'string' && video.startsWith('http')) dataToSave.video = video;
+
   // Guardar resultado en Firestore
   try {
     await getDocument('resultados', partidoId);
-    await updateDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true });
+    await updateDocument('resultados', partidoId, dataToSave);
   } catch {
-    await createDocument('resultados', partidoId, { golesLocal, golesVisitante, jugado: true });
+    await createDocument('resultados', partidoId, dataToSave);
   }
 
   // Recalcular puntos de todos los participantes
-  await recalcularTodos();
+  try { await recalcularTodos(); } catch { /* no bloquear si recalculo falla */ }
 
   return NextResponse.json({ ok: true });
 }

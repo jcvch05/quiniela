@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS } from '@/lib/partidos';
 
 interface DashData {
   timestamp: string;
@@ -40,6 +41,13 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
   const [enviandoMasivo, setEnviandoMasivo] = useState(false);
   const [resultadoMasivo, setResultadoMasivo] = useState<{ enviados: number; fallidos: number; total: number } | null>(null);
+  // Resultado entry form
+  const [selPartido, setSelPartido] = useState('');
+  const [selGL, setSelGL] = useState('');
+  const [selGV, setSelGV] = useState('');
+  const [selVideo, setSelVideo] = useState('');
+  const [guardandoRes, setGuardandoRes] = useState(false);
+  const [msgRes, setMsgRes] = useState('');
 
   const HEADERS = { 'Content-Type': 'application/json', 'x-admin-password': 'vilaseca2026' };
   const OPTS = { credentials: 'include' as const };
@@ -75,6 +83,27 @@ export default function DashboardPage() {
       body: JSON.stringify({ id, pagado: !pagado }),
     });
     fetchData();
+  }
+
+  async function guardarResultado() {
+    if (!selPartido || selGL === '' || selGV === '') { setMsgRes('❌ Completa partido y marcador'); return; }
+    setGuardandoRes(true); setMsgRes('');
+    try {
+      const body: Record<string, unknown> = {
+        partidoId: selPartido,
+        golesLocal: Number(selGL),
+        golesVisitante: Number(selGV),
+      };
+      if (selVideo.trim()) body.video = selVideo.trim();
+      const res = await fetch('/api/resultados', { ...OPTS, method: 'POST', headers: HEADERS, body: JSON.stringify(body) });
+      const json = await res.json();
+      if (res.ok) {
+        setMsgRes('✅ Resultado guardado');
+        setSelPartido(''); setSelGL(''); setSelGV(''); setSelVideo('');
+        fetchData();
+      } else setMsgRes('❌ ' + (json.error ?? 'Error'));
+    } catch { setMsgRes('❌ Error de red'); }
+    finally { setGuardandoRes(false); }
   }
 
   async function enviarEmailsMasivo() {
@@ -355,6 +384,42 @@ export default function DashboardPage() {
                 detail={`${emails.enviados_ok} enviados · ${emails.fallidos} errores`}
                 icon="✉️"
               />
+            </div>
+
+            {/* Formulario de resultado */}
+            <div className="bg-gray-900 border border-yellow-400/30 rounded-2xl p-5 space-y-4">
+              <h2 className="font-bold text-yellow-300">⚽ Ingresar Resultado</h2>
+              <select value={selPartido} onChange={e => setSelPartido(e.target.value)}
+                className="w-full bg-gray-800 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm">
+                <option value="">-- Selecciona partido --</option>
+                <optgroup label="⚔️ Fase 16avos">
+                  {PARTIDOS_DIECISEISAVOS.filter(p => p.local !== 'Por confirmar').map(p => (
+                    <option key={p.id} value={p.id}>{p.id} · {p.local} vs {p.visitante}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="📊 Fase Grupos">
+                  {PARTIDOS_GRUPOS.map(p => (
+                    <option key={p.id} value={p.id}>{p.id} · {p.local} vs {p.visitante}</option>
+                  ))}
+                </optgroup>
+              </select>
+              <div className="flex gap-3 items-center">
+                <input type="number" min="0" max="20" placeholder="Local" value={selGL}
+                  onChange={e => setSelGL(e.target.value)}
+                  className="w-20 text-center font-black text-xl bg-gray-800 border border-white/20 rounded-xl py-2 text-white" />
+                <span className="text-gray-400 font-black text-xl">-</span>
+                <input type="number" min="0" max="20" placeholder="Visit." value={selGV}
+                  onChange={e => setSelGV(e.target.value)}
+                  className="w-20 text-center font-black text-xl bg-gray-800 border border-white/20 rounded-xl py-2 text-white" />
+              </div>
+              <button onClick={guardarResultado} disabled={guardandoRes}
+                className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-3 rounded-xl transition-colors">
+                {guardandoRes ? '⏳ Guardando…' : '💾 Guardar Resultado'}
+              </button>
+              <input type="url" placeholder="Link video resumen (YouTube)" value={selVideo}
+                onChange={e => setSelVideo(e.target.value)}
+                className="w-full bg-gray-800 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm" />
+              {msgRes && <p className="text-sm font-semibold text-center">{msgRes}</p>}
             </div>
 
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-5">
