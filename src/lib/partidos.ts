@@ -101,3 +101,33 @@ export const PARTIDOS_GRUPOS: Partido[] = [
 ];
 
 export const TODOS_PARTIDOS: Partido[] = [...PARTIDOS_GRUPOS];
+
+export interface PartidoEliminatoria {
+  id: string;
+  local: string;
+  visitante: string;
+  fecha: string;
+  sede: string;
+  ciudad: string;
+}
+
+export const DEADLINE_DIECISEISAVOS = '2026-06-28T18:00:00Z'; // 14:00 BOT
+
+export const PARTIDOS_DIECISEISAVOS: PartidoEliminatoria[] = [
+  { id: 'D01', local: 'Sudáfrica',         visitante: 'Canadá',           fecha: '2026-06-28T18:00:00Z', sede: 'Levi\'s Stadium',         ciudad: 'San Francisco' },
+  { id: 'D02', local: 'Brasil',            visitante: 'Japón',            fecha: '2026-06-29T14:00:00Z', sede: 'Rose Bowl',               ciudad: 'Los Ángeles' },
+  { id: 'D03', local: 'Alemania',          visitante: 'Paraguay',         fecha: '2026-06-29T18:00:00Z', sede: 'Estadio Azteca',          ciudad: 'Ciudad de México' },
+  { id: 'D04', local: 'Países Bajos',      visitante: 'Marruecos',        fecha: '2026-06-29T22:00:00Z', sede: 'AT&T Stadium',            ciudad: 'Dallas' },
+  { id: 'D05', local: 'Costa de Marfil',   visitante: 'Noruega',          fecha: '2026-06-30T14:00:00Z', sede: 'Hard Rock Stadium',       ciudad: 'Miami' },
+  { id: 'D06', local: 'Francia',           visitante: 'Suecia',           fecha: '2026-06-30T18:00:00Z', sede: 'MetLife Stadium',         ciudad: 'Nueva York / NJ' },
+  { id: 'D07', local: 'México',            visitante: 'Ecuador',          fecha: '2026-06-30T22:00:00Z', sede: 'Estadio Akron',           ciudad: 'Guadalajara' },
+  { id: 'D08', local: 'Inglaterra',        visitante: 'R.D. Congo',       fecha: '2026-07-01T14:00:00Z', sede: 'Mercedes-Benz Stadium',   ciudad: 'Atlanta' },
+  { id: 'D09', local: 'EE.UU.',            visitante: 'Bosnia-Herz.',     fecha: '2026-07-01T18:00:00Z', sede: 'Gillette Stadium',        ciudad: 'Boston' },
+  { id: 'D10', local: 'Bélgica',           visitante: 'Senegal',          fecha: '2026-07-01T22:00:00Z', sede: 'AT&T Stadium',            ciudad: 'Dallas' },
+  { id: 'D11', local: 'España',            visitante: 'Austria',          fecha: '2026-07-02T14:00:00Z', sede: 'NRG Stadium',             ciudad: 'Houston' },
+  { id: 'D12', local: 'Portugal',          visitante: 'Croacia',          fecha: '2026-07-02T18:00:00Z', sede: 'Lincoln Financial Field', ciudad: 'Filadelfia' },
+  { id: 'D13', local: 'Suiza',             visitante: 'Argelia',          fecha: '2026-07-02T22:00:00Z', sede: 'Levi\'s Stadium',         ciudad: 'San Francisco' },
+  { id: 'D14', local: 'Australia',         visitante: 'Egipto',           fecha: '2026-07-03T14:00:00Z', sede: 'BMO Field',               ciudad: 'Toronto' },
+  { id: 'D15', local: 'Argentina',         visitante: 'Cabo Verde',       fecha: '2026-07-03T18:00:00Z', sede: 'Rose Bowl',               ciudad: 'Los Ángeles' },
+  { id: 'D16', local: 'Colombia',          visitante: 'Ghana',            fecha: '2026-07-03T22:00:00Z', sede: 'Hard Rock Stadium',       ciudad: 'Miami' },
+];
