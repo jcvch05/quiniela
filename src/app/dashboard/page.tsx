@@ -440,7 +440,8 @@ export default function DashboardPage() {
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-5 space-y-3">
               <h2 className="font-bold">🔗 Links de la app</h2>
               {[
-                { label: 'Página pública', url: 'https://quiniela-gray.vercel.app' },
+                { label: 'Vercel (principal)', url: 'https://quiniela-gray.vercel.app' },
+                { label: 'Netlify (redirige a Vercel)', url: 'https://quinielavilaseca.netlify.app' },
                 { label: 'Tabla de posiciones', url: 'https://quiniela-gray.vercel.app/tabla' },
                 { label: 'Fixture', url: 'https://quiniela-gray.vercel.app/fixture' },
                 { label: 'Admin', url: 'https://quiniela-gray.vercel.app/admin' },
