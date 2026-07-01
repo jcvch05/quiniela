@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { PARTIDOS_GRUPOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS, DEADLINE_DIECISEISAVOS } from '@/lib/partidos';
 import { SELECCIONES } from '@/types';
 import { getSession } from '@/lib/authService';
 
@@ -19,19 +19,21 @@ import { bandera, conBandera } from '@/lib/banderas';
 
 // Deadlines en hora Bolivia
 const DEADLINES = {
-  fase1:  new Date('2026-06-11T14:30:00-04:00'),
-  octavos: new Date('2026-06-29T11:00:00-04:00'),
-  cuartos: new Date('2026-07-04T11:00:00-04:00'),
-  semis:   new Date('2026-07-14T11:00:00-04:00'),
+  fase1:         new Date('2026-06-11T14:30:00-04:00'),
+  dieciseisavos: new Date(DEADLINE_DIECISEISAVOS),
+  octavos:       new Date('2026-06-29T11:00:00-04:00'),
+  cuartos:       new Date('2026-07-04T11:00:00-04:00'),
+  semis:         new Date('2026-07-14T11:00:00-04:00'),
 };
 
-type Fase = 'fase1' | 'octavos' | 'cuartos' | 'semis';
+type Fase = 'fase1' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis';
 
 const FASES = [
-  { id: 'fase1'  as Fase, label: '📋 Fase 1 – Grupos',    deadline: DEADLINES.fase1,   desc: 'Especiales + todos los partidos de grupos' },
-  { id: 'octavos'as Fase, label: '⚔️ Fase 2 – Octavos',   deadline: DEADLINES.octavos, desc: '8 equipos clasificados a cuartos' },
-  { id: 'cuartos'as Fase, label: '🔥 Fase 3 – Cuartos',   deadline: DEADLINES.cuartos, desc: '4 equipos clasificados a semifinales' },
-  { id: 'semis'  as Fase, label: '🌟 Fase 4 – Semis',     deadline: DEADLINES.semis,   desc: '2 equipos finalistas' },
+  { id: 'fase1'          as Fase, label: '📋 Fase 1 – Grupos',    deadline: DEADLINES.fase1,         desc: 'Especiales + todos los partidos de grupos' },
+  { id: 'dieciseisavos'  as Fase, label: '⚔️ Fase 2 – 16avos',    deadline: DEADLINES.dieciseisavos, desc: 'Marcadores de los 16 partidos de octavos' },
+  { id: 'octavos'        as Fase, label: '🔥 Fase 3 – Cuartos',   deadline: DEADLINES.octavos,       desc: '8 equipos clasificados a cuartos' },
+  { id: 'cuartos'        as Fase, label: '💥 Fase 4 – Semis',     deadline: DEADLINES.cuartos,       desc: '4 equipos clasificados a semifinales' },
+  { id: 'semis'          as Fase, label: '🌟 Fase 5 – Final',     deadline: DEADLINES.semis,         desc: '2 equipos finalistas' },
 ];
 
 const GRUPOS_LETRAS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
@@ -88,6 +90,7 @@ export default function PronosticosPage() {
         const pp = p as Record<string, unknown>;
         const env: Partial<Record<Fase, boolean>> = {};
         if (pp.pronosticosGrupos && Object.keys(pp.pronosticosGrupos as object).length > 0) env.fase1 = true;
+        if (pp.pronosticosDieciseisavos && Object.keys(pp.pronosticosDieciseisavos as object).length > 0) env.dieciseisavos = true;
         if (pp.octavos && (pp.octavos as string[]).length > 0) env.octavos = true;
         if (pp.cuartos && (pp.cuartos as string[]).length > 0) env.cuartos = true;
         if (pp.semis && (pp.semis as string[]).length > 0) env.semis = true;
@@ -139,6 +142,14 @@ export default function PronosticosPage() {
             participante={participante}
             yaEnviado={!!enviado.fase1}
             onEnviado={() => setEnviado(e => ({ ...e, fase1: true }))}
+          />
+        )}
+        {faseActiva === 'dieciseisavos' && (
+          <FaseDieciseisavos
+            session={session}
+            participante={participante}
+            yaEnviado={!!enviado.dieciseisavos}
+            onEnviado={() => setEnviado(e => ({ ...e, dieciseisavos: true }))}
           />
         )}
         {faseActiva === 'octavos' && (
@@ -409,6 +420,146 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
       </button>
       <p className="text-xs text-gray-500 text-center">Recibirás un email con tus pronósticos al enviar.</p>
     </form>
+  );
+}
+
+// ─── Fase 2: 16avos de final ─────────────────────────────────────────────────
+const EXCLUIDOS_16AVOS = new Set(['D01', 'D02', 'D03', 'D04']);
+
+function FaseDieciseisavos({ session, participante, yaEnviado, onEnviado }: {
+  session: { uid: string; name: string; token: string; email: string };
+  participante: Record<string, unknown> | null;
+  yaEnviado: boolean;
+  onEnviado: () => void;
+}) {
+  const abierta = faseAbierta('dieciseisavos');
+  const previos = participante?.pronosticosDieciseisavos as Record<string, { golesLocal: number; golesVisitante: number }> | undefined;
+  const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(() =>
+    Object.fromEntries(PARTIDOS_DIECISEISAVOS.filter(p => !EXCLUIDOS_16AVOS.has(p.id)).map(p => [p.id, { local: 0, visitante: 0 }]))
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function setGol(id: string, lado: 'local' | 'visitante', val: number) {
+    setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
+  }
+
+  async function enviar() {
+    setLoading(true); setError('');
+    try {
+      const pronosticosDieciseisavos: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+      for (const p of PARTIDOS_DIECISEISAVOS.filter(p => !EXCLUIDOS_16AVOS.has(p.id))) {
+        pronosticosDieciseisavos[p.id] = { golesLocal: goles[p.id]?.local ?? 0, golesVisitante: goles[p.id]?.visitante ?? 0 };
+      }
+      const res = await fetch('/api/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: session.uid,
+          nombre: participante?.nombre ?? session.name,
+          telefono: participante?.telefono ?? '',
+          email: session.email,
+          pronosticosEspeciales: participante?.pronosticosEspeciales ?? {},
+          pronosticosGrupos: participante?.pronosticosGrupos ?? {},
+          pronosticosDieciseisavos,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      await enviarEmail('dieciseisavos', session.email, session.name, { pronosticosDieciseisavos });
+      onEnviado();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const partidos16 = PARTIDOS_DIECISEISAVOS.filter(p => !EXCLUIDOS_16AVOS.has(p.id));
+
+  // Vista de pronósticos ya enviados
+  if (yaEnviado && previos) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-900/30 border border-green-600/40 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <h2 className="text-lg font-black text-green-400">Fase 2 enviada</h2>
+          <p className="text-gray-400 text-sm">Tus pronósticos para los 16avos están guardados.</p>
+        </div>
+        <div className="space-y-2">
+          {partidos16.map(p => {
+            const pred = previos[p.id];
+            return (
+              <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                  {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : '? - ?'}
+                </span>
+                <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (!abierta) {
+    // Fase cerrada pero mostrar predicciones si las hay
+    return (
+      <div className="space-y-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+          <div className="text-4xl mb-2">🔒</div>
+          <h2 className="text-lg font-bold text-gray-400">Fase cerrada</h2>
+          <p className="text-gray-500 text-sm">El plazo venció el <span className="capitalize">{formatDeadline(DEADLINES.dieciseisavos)}</span></p>
+        </div>
+        {previos && Object.keys(previos).length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-400 px-1">Tus pronósticos:</h3>
+            {partidos16.map(p => {
+              const pred = previos[p.id];
+              return (
+                <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                  <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                  <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                    {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : <span className="text-gray-600">—</span>}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <DeadlineBanner deadline={DEADLINES.dieciseisavos} />
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
+        <h2 className="text-lg font-black text-yellow-400">⚔️ 16avos de Final</h2>
+        <p className="text-sm text-gray-400">Ingresá el marcador final de cada partido (D05–D16). Los primeros 4 ya se jugaron antes de abrir los pronósticos.</p>
+        {partidos16.map(p => (
+          <div key={p.id} className="bg-white/5 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-2">{p.id} · 📍 {p.ciudad}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold flex-1 text-right leading-tight">{bandera(p.local)} {p.local}</span>
+              <ContadorGoles value={goles[p.id]?.local ?? 0} onChange={v => setGol(p.id, 'local', v)} />
+              <span className="text-gray-500 font-black text-lg">-</span>
+              <ContadorGoles value={goles[p.id]?.visitante ?? 0} onChange={v => setGol(p.id, 'visitante', v)} />
+              <span className="text-sm font-semibold flex-1 leading-tight">{p.visitante} {bandera(p.visitante)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+      <button onClick={enviar} disabled={loading}
+        className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 disabled:opacity-40 text-black font-black py-4 rounded-2xl text-lg transition-all">
+        {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos 16avos'}
+      </button>
+    </div>
   );
 }
 
