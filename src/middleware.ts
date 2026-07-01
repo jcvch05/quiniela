@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/api/participantes',        // tabla pública de posiciones
   '/api/resultados-publicos',  // fixture público
   '/api/resultados',          // admin: cargar resultados (protegido por x-admin-password)
+  '/resumenes',               // página pública de resúmenes de partidos
 ];
 
 export function middleware(req: NextRequest) {

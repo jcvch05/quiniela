@@ -1,224 +1,173 @@
-import Link from 'next/link';
-import Image from 'next/image';
+'use client';
 
-const SELECCIONES = [
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+const BANDERAS = [
   '🇦🇷','🇧🇷','🇫🇷','🇩🇪','🇪🇸','🇵🇹','🇬🇧','🇮🇹','🇳🇱','🇺🇾',
   '🇲🇽','🇺🇸','🇨🇦','🇯🇵','🇰🇷','🇸🇳','🇳🇬','🇲🇦','🇨🇴','🇨🇱',
   '🇦🇺','🇧🇪','🇨🇭','🇵🇱','🇸🇪','🇩🇰','🇹🇷','🇪🇨','🇵🇾','🇧🇴',
 ];
 
+// Fases y sus ventanas de apuesta
+const FASES = [
+  {
+    id: 'grupos',
+    label: '📋 FASE GRUPOS',
+    abre: new Date('2026-06-01T00:00:00-04:00'),
+    cierra: new Date('2026-06-11T14:30:00-04:00'),
+    href: '/pronosticos',
+  },
+  {
+    id: 'dieciseisavos',
+    label: '⚔️ FASE 16AVOS',
+    abre: new Date('2026-06-28T01:00:00-04:00'),
+    cierra: new Date('2026-06-28T14:00:00-04:00'),
+    href: '/pronosticos',
+  },
+  {
+    id: 'cuartos',
+    label: '🔥 FASE CUARTOS',
+    abre: new Date('2026-07-04T01:00:00-04:00'),
+    cierra: new Date('2026-07-04T11:00:00-04:00'),
+    href: '/pronosticos',
+  },
+  {
+    id: 'semis',
+    label: '🌟 FASE SEMIS',
+    abre: new Date('2026-07-14T01:00:00-04:00'),
+    cierra: new Date('2026-07-14T11:00:00-04:00'),
+    href: '/pronosticos',
+  },
+];
+
+function getFaseActual() {
+  const now = new Date();
+  // Fase abierta ahora
+  const abierta = FASES.find(f => now >= f.abre && now < f.cierra);
+  if (abierta) return { fase: abierta, estado: 'abierta' as const };
+  // Próxima fase
+  const proxima = FASES.find(f => now < f.abre);
+  if (proxima) return { fase: proxima, estado: 'proxima' as const };
+  // Última fase cerrada
+  const cerradas = FASES.filter(f => now >= f.cierra);
+  const ultima = cerradas[cerradas.length - 1];
+  if (ultima) return { fase: ultima, estado: 'cerrada' as const };
+  return null;
+}
+
+function formatDeadline(d: Date) {
+  return d.toLocaleString('es-BO', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
 export default function Home() {
+  const [faseInfo, setFaseInfo] = useState<ReturnType<typeof getFaseActual>>(null);
+
+  useEffect(() => {
+    setFaseInfo(getFaseActual());
+    const iv = setInterval(() => setFaseInfo(getFaseActual()), 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden">
 
-      {/* Fondo animado con banderas flotantes */}
+      {/* Fondo con banderas flotantes */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Gradiente base */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-950 via-black to-blue-950" />
-
-        {/* Círculos decorativos de cancha */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-white/5" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-white/5" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-2 border-white/10" />
-
-        {/* Línea central */}
         <div className="absolute top-1/2 left-0 right-0 h-px bg-white/5" />
-
-        {/* Banderas flotantes */}
-        {SELECCIONES.map((flag, i) => (
-          <span
-            key={i}
-            className="absolute text-3xl md:text-4xl opacity-20 select-none animate-pulse"
+        {BANDERAS.map((flag, i) => (
+          <span key={i} className="absolute text-3xl md:text-4xl opacity-20 select-none animate-pulse"
             style={{
               left: `${(i * 37 + 5) % 95}%`,
               top: `${(i * 23 + 8) % 90}%`,
               animationDelay: `${(i * 0.4) % 3}s`,
               animationDuration: `${3 + (i % 3)}s`,
-            }}
-          >
+            }}>
             {flag}
           </span>
         ))}
-
-        {/* Pelota decorativa grande */}
-        <div className="absolute -bottom-20 -right-20 text-[200px] opacity-5 select-none">⚽</div>
-        <div className="absolute -top-10 -left-10 text-[150px] opacity-5 select-none">🏆</div>
       </div>
 
       {/* Contenido */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
 
-        {/* ── HERO ── */}
-        <section className="flex flex-col items-center justify-center min-h-[85vh] px-4 text-center">
-
-          {/* Badge superior */}
-          <div className="inline-flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-sm font-semibold px-4 py-2 rounded-full mb-6">
-            ⚽ FIFA World Cup 2026™ · 11 junio – 19 julio
-          </div>
-
-          {/* Logo oficial del Mundial 2026 */}
-          <div className="relative mb-6">
-            <div style={{ filter: 'drop-shadow(0 0 40px rgba(250,204,21,0.4))' }}>
-              <Image
-                src="/copa-mundial.png"
-                alt="FIFA World Cup 2026 Official Emblem"
-                width={220}
-                height={340}
-                className="mx-auto"
-                priority
-              />
-            </div>
-            <div className="absolute top-2 -right-6 text-4xl animate-bounce">⚽</div>
-            <div className="absolute bottom-4 -left-6 text-3xl animate-pulse">⭐</div>
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-3 leading-none">
-            <span className="text-white">Quiniela</span>
-            <br />
-            <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
-              Mundialista 2026
-            </span>
-          </h1>
-
-          <p className="text-2xl md:text-3xl font-bold text-green-300 mb-3">
+        {/* Título */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-black text-green-400 mb-3">
             🏠 Familia Vilaseca
-          </p>
-
-          <p className="text-gray-400 max-w-md mb-10 text-lg">
+          </h1>
+          <p className="text-gray-300 text-lg max-w-sm mx-auto">
             Demuestra que eres el mejor pronosticador. Predice los resultados y compite por el pozo.
           </p>
+        </div>
 
-          {/* Deadline badge */}
-          <div className="bg-red-500/20 border border-red-500/40 text-red-300 px-4 py-2 rounded-xl text-sm font-semibold mb-8 inline-flex items-center gap-2">
-            ⏰ Inscripciones cierran el <strong className="text-white">10 de junio de 2026</strong>
+        {/* Banner de fase actual */}
+        {faseInfo && (
+          <div className={`w-full max-w-sm mb-6 rounded-2xl border-2 p-5 text-center ${
+            faseInfo.estado === 'abierta'
+              ? 'bg-yellow-900/40 border-yellow-500 text-yellow-300'
+              : faseInfo.estado === 'proxima'
+              ? 'bg-blue-900/30 border-blue-500/60 text-blue-300'
+              : 'bg-gray-900/60 border-gray-600/60 text-gray-400'
+          }`}>
+            <div className="text-2xl font-black mb-1">{faseInfo.fase.label}</div>
+            {faseInfo.estado === 'abierta' && (
+              <>
+                <p className="text-sm font-semibold mb-1 capitalize">
+                  Cierra: {formatDeadline(faseInfo.fase.cierra)}
+                </p>
+                <Link href={faseInfo.fase.href}
+                  className="text-sm font-bold underline underline-offset-2">
+                  Toca aquí para apostar →
+                </Link>
+              </>
+            )}
+            {faseInfo.estado === 'proxima' && (
+              <p className="text-sm font-semibold capitalize">
+                Abre: {formatDeadline(faseInfo.fase.abre)}
+              </p>
+            )}
+            {faseInfo.estado === 'cerrada' && (
+              <p className="text-sm font-semibold">Apuestas cerradas</p>
+            )}
           </div>
+        )}
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/registro"
-              className="bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-10 py-4 rounded-2xl text-xl transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:scale-105">
-              ¡Quiero jugar! ⚽
-            </Link>
-            <Link href="/tabla"
-              className="border-2 border-white/20 hover:border-white/50 hover:bg-white/5 text-white font-bold px-10 py-4 rounded-2xl text-xl transition-all">
-              Ver posiciones 🏆
-            </Link>
-          </div>
+        {/* Botones principales */}
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          <Link href="/tabla"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black text-xl py-5 rounded-2xl transition-all shadow-lg shadow-yellow-400/20 hover:scale-105">
+            Ver posiciones 🏆
+          </Link>
 
-          {/* Sedes */}
-          <div className="mt-12 flex flex-wrap justify-center gap-3 text-sm text-gray-500">
-            <span>🇺🇸 Estados Unidos</span>
-            <span>·</span>
-            <span>🇨🇦 Canadá</span>
-            <span>·</span>
-            <span>🇲🇽 México</span>
-          </div>
-        </section>
+          <Link href="/fixture"
+            className="flex items-center justify-center gap-2 bg-transparent border-2 border-green-500 hover:bg-green-900/30 text-green-400 font-bold text-xl py-4 rounded-2xl transition-all">
+            📅 Fixture
+          </Link>
 
-        {/* ── PREMIOS ── */}
-        <section className="max-w-3xl mx-auto px-4 py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-black mb-2">💰 El Pozo</h2>
-            <p className="text-gray-400">Todo lo recaudado se reparte entre los tres mejores</p>
-          </div>
+          <Link href="/resumenes"
+            className="flex items-center justify-center gap-2 bg-transparent border-2 border-purple-500 hover:bg-purple-900/30 text-purple-400 font-bold text-xl py-4 rounded-2xl transition-all">
+            🎬 Resúmenes
+          </Link>
 
-          <div className="grid grid-cols-3 gap-4 text-center mb-6">
-            <div className="relative bg-gradient-to-b from-yellow-500/30 to-yellow-900/20 border-2 border-yellow-500/60 rounded-2xl p-5 md:p-6">
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl">🥇</div>
-              <div className="mt-3 font-black text-yellow-400 text-lg md:text-xl">1° Lugar</div>
-              <div className="text-4xl md:text-5xl font-black mt-1">60%</div>
-              <div className="text-xs text-gray-400 mt-1">del pozo total</div>
-            </div>
-            <div className="relative bg-gradient-to-b from-gray-400/20 to-gray-800/20 border-2 border-gray-400/40 rounded-2xl p-5 md:p-6 mt-4">
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl">🥈</div>
-              <div className="mt-3 font-black text-gray-300 text-lg md:text-xl">2° Lugar</div>
-              <div className="text-4xl md:text-5xl font-black mt-1">25%</div>
-              <div className="text-xs text-gray-400 mt-1">del pozo total</div>
-            </div>
-            <div className="relative bg-gradient-to-b from-orange-600/20 to-orange-900/20 border-2 border-orange-500/40 rounded-2xl p-5 md:p-6 mt-8">
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-4xl">🥉</div>
-              <div className="mt-3 font-black text-orange-400 text-lg md:text-xl">3° Lugar</div>
-              <div className="text-4xl md:text-5xl font-black mt-1">15%</div>
-              <div className="text-xs text-gray-400 mt-1">del pozo total</div>
-            </div>
-          </div>
+          <Link href="/pronosticos"
+            className="flex items-center justify-center gap-2 bg-transparent border-2 border-white/20 hover:bg-white/5 text-gray-300 font-semibold text-lg py-3 rounded-2xl transition-all">
+            🎯 Mis apuestas
+          </Link>
+        </div>
 
-          <div className="text-center bg-white/5 border border-white/10 rounded-2xl p-4">
-            <p className="text-gray-300">
-              Inscripción: <span className="text-yellow-400 font-black text-xl">50 Bs</span> · Pago único con QR Banco BISA
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Ejemplo con 20 jugadores: pozo de 1.000 Bs → 1° 600 Bs · 2° 250 Bs · 3° 150 Bs</p>
-          </div>
-        </section>
-
-        {/* ── PUNTUACIÓN ── */}
-        <section className="max-w-3xl mx-auto px-4 pb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-black mb-2">📊 ¿Cómo se ganan puntos?</h2>
-            <p className="text-gray-400">Cuanto más exacto, más puntos</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div className="bg-gradient-to-b from-green-900/40 to-transparent border border-green-700/40 rounded-2xl p-5 text-center">
-              <div className="text-4xl mb-3">✅</div>
-              <div className="font-black text-2xl text-yellow-400 mb-1">3 pts</div>
-              <div className="font-bold text-white mb-1">Resultado correcto</div>
-              <div className="text-sm text-gray-400">Acertás quién gana o si empata</div>
-            </div>
-            <div className="bg-gradient-to-b from-blue-900/40 to-transparent border border-blue-700/40 rounded-2xl p-5 text-center">
-              <div className="text-4xl mb-3">🎯</div>
-              <div className="font-black text-2xl text-yellow-400 mb-1">5 pts</div>
-              <div className="font-bold text-white mb-1">Diferencia exacta</div>
-              <div className="text-sm text-gray-400">Acertás la diferencia de goles</div>
-            </div>
-            <div className="bg-gradient-to-b from-purple-900/40 to-transparent border border-purple-700/40 rounded-2xl p-5 text-center">
-              <div className="text-4xl mb-3">🔮</div>
-              <div className="font-black text-2xl text-yellow-400 mb-1">8 pts</div>
-              <div className="font-bold text-white mb-1">Marcador exacto</div>
-              <div className="text-sm text-gray-400">Acertás el resultado completo</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { pts: '50', label: 'Campeón', icon: '🏆' },
-              { pts: '25', label: 'Subcampeón', icon: '🥈' },
-              { pts: '10', label: 'Semifinalista', icon: '⭐' },
-              { pts: '20', label: 'Máx. Goleador', icon: '⚽' },
-            ].map(item => (
-              <div key={item.label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <div className="text-2xl mb-1">{item.icon}</div>
-                <div className="font-black text-xl text-yellow-400">{item.pts} pts</div>
-                <div className="text-xs text-gray-400">{item.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── SELECCIONES PARTICIPANTES ── */}
-        <section className="max-w-3xl mx-auto px-4 pb-16 text-center">
-          <h2 className="text-2xl font-black mb-6 text-gray-300">48 selecciones · 104 partidos · 1 campeón</h2>
-          <div className="flex flex-wrap justify-center gap-3 text-4xl">
-            {SELECCIONES.map((flag, i) => (
-              <span key={i} className="hover:scale-125 transition-transform cursor-default" title="">
-                {flag}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* ── CTA FINAL ── */}
-        <section className="text-center pb-20 px-4">
-          <div className="max-w-md mx-auto bg-gradient-to-b from-green-900/40 to-transparent border border-green-700/40 rounded-3xl p-8">
-            <div className="text-6xl mb-4">🚀</div>
-            <h3 className="text-2xl font-black mb-2">¿Listo para competir?</h3>
-            <p className="text-gray-400 mb-6 text-sm">Inscribite antes del 10 de junio y demuestra que sabés más de fútbol que el resto de la familia.</p>
-            <Link href="/registro"
-              className="block bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-black font-black px-8 py-4 rounded-2xl text-xl transition-all hover:scale-105 shadow-lg shadow-yellow-400/20">
-              Inscribirme ahora ⚽
-            </Link>
-          </div>
-        </section>
-
+        {/* Footer */}
+        <div className="mt-10 flex flex-wrap justify-center gap-3 text-sm text-gray-500">
+          <span>🇺🇸 Estados Unidos</span>
+          <span>·</span>
+          <span>🇨🇦 Canadá</span>
+          <span>·</span>
+          <span>🇲🇽 México</span>
+        </div>
       </div>
     </main>
   );
