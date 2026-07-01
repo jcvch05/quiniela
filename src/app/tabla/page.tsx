@@ -8,11 +8,11 @@ interface Entry {
   nombre: string;
   puntos: number;
   desglose: {
-    grupos: number;
-    octavos: number;
-    cuartos: number;
-    semis: number;
-    especiales: number;
+    grupos?: number;
+    dieciseisavos?: number;
+    cuartos?: number;
+    semis?: number;
+    especiales?: number;
   };
 }
 
@@ -100,10 +100,18 @@ export default function TablaPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{entry.nombre}</p>
-                  <div className="flex gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
-                    <span>Grupos: <strong className="text-white">{entry.desglose?.grupos ?? 0}</strong></span>
-                    <span>Eliminatorias: <strong className="text-white">{(entry.desglose?.octavos ?? 0) + (entry.desglose?.cuartos ?? 0) + (entry.desglose?.semis ?? 0)}</strong></span>
-                    <span>Especiales: <strong className="text-white">{entry.desglose?.especiales ?? 0}</strong></span>
+                  <div className="flex gap-3 text-xs text-gray-400 mt-1 flex-wrap">
+                    {[
+                      { label: 'Grupos',    val: entry.desglose?.grupos,         show: true },
+                      { label: '16avos',    val: entry.desglose?.dieciseisavos,  show: true },
+                      { label: 'Cuartos',   val: entry.desglose?.cuartos,        show: (entry.desglose?.cuartos ?? 0) > 0 },
+                      { label: 'Semis',     val: entry.desglose?.semis,          show: (entry.desglose?.semis ?? 0) > 0 },
+                      { label: 'Especiales',val: entry.desglose?.especiales,     show: true },
+                    ].filter(f => f.show).map(f => (
+                      <span key={f.label}>
+                        {f.label}: <strong className={(f.val ?? 0) > 0 ? 'text-yellow-400' : 'text-white'}>{f.val ?? 0}</strong>
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div className="text-3xl font-black text-yellow-400 shrink-0">{entry.puntos}</div>
