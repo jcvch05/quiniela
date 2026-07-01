@@ -1,7 +1,10 @@
 const FIREBASE_BASE = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? '';
 
 async function firestoreRequest(path: string, method = 'GET', body?: object, token?: string) {
-  const url = `${FIREBASE_BASE}/${path}`;
+  // Include API key for all requests so Firestore rules can allow access
+  const separator = path.includes('?') ? '&' : '?';
+  const url = `${FIREBASE_BASE}/${path}${separator}key=${API_KEY}`;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
