@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/*"
+  to = "https://quiniela-gray.vercel.app/:splat"
+  status = 301
+  force = true
