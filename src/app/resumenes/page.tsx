@@ -44,10 +44,8 @@ function VideoCard({ r }: { r: Resultado }) {
         </a>
       )}
       <div className="px-4 py-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10 text-gray-400">{r.id} · {info.ciudad}</span>
-        </div>
-        <div className="flex items-center gap-2 justify-center py-2">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10 text-gray-400">{r.id} · {info.ciudad}</span>
+        <div className="flex items-center gap-2 justify-center py-3">
           <span className="text-sm font-semibold flex-1 text-right">{bandera(info.local)} {info.local}</span>
           <span className="text-xl font-black text-yellow-400 min-w-[52px] text-center">{r.golesLocal} – {r.golesVisitante}</span>
           <span className="text-sm font-semibold flex-1">{info.visitante} {bandera(info.visitante)}</span>
@@ -64,57 +62,49 @@ function VideoCard({ r }: { r: Resultado }) {
 }
 
 const GRUPOS_LIST = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-
-type Tab = string; // 'A'-'L' | 'dieciseisavos' | 'cuartos' | 'semis' | 'final'
+type TabPrincipal = 'grupos' | 'dieciseisavos' | 'cuartos' | 'semis' | 'final';
 
 export default function ResumenesPage() {
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('dieciseisavos');
+  const [tab, setTab] = useState<TabPrincipal>('dieciseisavos');
+  const [grupoActivo, setGrupoActivo] = useState('A');
 
   useEffect(() => {
     fetch('/api/resultados-publicos', { cache: 'no-store' })
       .then(r => r.json())
-      .then((data: Resultado[]) => {
-        setResultados(data.filter(r => r.jugado && r.video));
-      })
+      .then((data: Resultado[]) => setResultados(data.filter(r => r.jugado && r.video)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // Agrupar por fase/grupo
   const byGrupo = useMemo(() => {
     const map: Record<string, Resultado[]> = {};
     for (const r of resultados) {
       const info = getInfo(r.id);
       if (!info) continue;
-      if (info.fase === 'grupos' && info.grupo) {
-        if (!map[info.grupo]) map[info.grupo] = [];
-        map[info.grupo].push(r);
-      } else if (info.fase === '16avos') {
-        if (!map['dieciseisavos']) map['dieciseisavos'] = [];
-        map['dieciseisavos'].push(r);
-      } else {
-        if (!map[info.fase]) map[info.fase] = [];
-        map[info.fase].push(r);
-      }
+      const key = info.fase === 'grupos' ? (info.grupo ?? 'X') : info.fase;
+      if (!map[key]) map[key] = [];
+      map[key].push(r);
     }
     return map;
   }, [resultados]);
 
-  // Tabs disponibles: grupos con video primero, luego fases elim
   const gruposConVideo = GRUPOS_LIST.filter(g => byGrupo[g]?.length);
-  const elimConVideo = (['dieciseisavos', 'cuartos', 'semis', 'final'] as const).filter(f => byGrupo[f]?.length);
+  const totalGrupos = GRUPOS_LIST.reduce((s, g) => s + (byGrupo[g]?.length ?? 0), 0);
 
-  const TABS: { id: Tab; label: string }[] = [
-    ...elimConVideo.map(f => ({
-      id: f,
-      label: f === 'dieciseisavos' ? '⚔️ 16avos' : f === 'cuartos' ? '🔥 Cuartos' : f === 'semis' ? '🌟 Semis' : '🏆 Final'
-    })),
-    ...gruposConVideo.map(g => ({ id: g, label: `Grupo ${g}` })),
-  ];
+  const TABS: { id: TabPrincipal; label: string; count: number }[] = [
+    { id: 'grupos',        label: '📋 Grupos',  count: totalGrupos },
+    { id: 'dieciseisavos', label: '⚔️ 16avos',  count: byGrupo['16avos']?.length ?? 0 },
+    { id: 'cuartos',       label: '🔥 8avos',   count: byGrupo['cuartos']?.length ?? 0 },
+    { id: 'semis',         label: '🌟 Semis',   count: byGrupo['semis']?.length ?? 0 },
+    { id: 'final',         label: '🏆 Final',   count: byGrupo['final']?.length ?? 0 },
+  ].filter(t => t.count > 0 || t.id === 'grupos' || t.id === 'dieciseisavos' || t.id === 'cuartos') as { id: TabPrincipal; label: string; count: number }[];
 
-  const actual = byGrupo[tab] ?? [];
+  const videos16 = byGrupo['16avos'] ?? [];
+  const videosCuartos = byGrupo['cuartos'] ?? [];
+  const videosSemis = byGrupo['semis'] ?? [];
+  const videosFinal = byGrupo['final'] ?? [];
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-950 to-black text-white">
@@ -131,36 +121,76 @@ export default function ResumenesPage() {
           </div>
         )}
 
-        {!loading && TABS.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-4">🎥</div>
-            <p className="text-gray-400">Aún no hay resúmenes disponibles.</p>
-            <p className="text-gray-600 text-sm mt-1">Los videos aparecerán aquí cuando se carguen los resultados.</p>
-          </div>
-        )}
-
-        {!loading && TABS.length > 0 && (
+        {!loading && (
           <>
-            {/* Tabs */}
+            {/* Tabs principales */}
             <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
               {TABS.map(t => (
                 <button key={t.id} onClick={() => setTab(t.id)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                  className={`whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
                     tab === t.id ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
                   }`}>
                   {t.label}
-                  <span className="ml-1.5 text-xs opacity-70">({byGrupo[t.id]?.length ?? 0})</span>
+                  {t.count > 0 && <span className="ml-1.5 text-xs opacity-70">({t.count})</span>}
                 </button>
               ))}
             </div>
 
-            {/* Videos */}
-            {actual.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">No hay videos en esta sección aún.</div>
-            ) : (
-              <div className="space-y-5">
-                {actual.map(r => <VideoCard key={r.id} r={r} />)}
-              </div>
+            {/* ── GRUPOS ── */}
+            {tab === 'grupos' && (
+              <>
+                {gruposConVideo.length === 0 ? (
+                  <div className="text-center py-16 text-gray-500">
+                    <div className="text-4xl mb-3">🎥</div>
+                    <p>Aún no hay videos de la fase de grupos.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Sub-tabs de grupo */}
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      {gruposConVideo.map(g => (
+                        <button key={g} onClick={() => setGrupoActivo(g)}
+                          className={`w-11 h-11 rounded-xl font-black text-base transition-colors ${
+                            grupoActivo === g ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}>
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="space-y-5">
+                      {(byGrupo[grupoActivo] ?? []).map(r => <VideoCard key={r.id} r={r} />)}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ── 16AVOS ── */}
+            {tab === 'dieciseisavos' && (
+              videos16.length === 0
+                ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de 16avos.</p></div>
+                : <div className="space-y-5">{videos16.map(r => <VideoCard key={r.id} r={r} />)}</div>
+            )}
+
+            {/* ── CUARTOS ── */}
+            {tab === 'cuartos' && (
+              videosCuartos.length === 0
+                ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de cuartos.</p></div>
+                : <div className="space-y-5">{videosCuartos.map(r => <VideoCard key={r.id} r={r} />)}</div>
+            )}
+
+            {/* ── SEMIS ── */}
+            {tab === 'semis' && (
+              videosSemis.length === 0
+                ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de semis.</p></div>
+                : <div className="space-y-5">{videosSemis.map(r => <VideoCard key={r.id} r={r} />)}</div>
+            )}
+
+            {/* ── FINAL ── */}
+            {tab === 'final' && (
+              videosFinal.length === 0
+                ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de la final.</p></div>
+                : <div className="space-y-5">{videosFinal.map(r => <VideoCard key={r.id} r={r} />)}</div>
             )}
           </>
         )}
