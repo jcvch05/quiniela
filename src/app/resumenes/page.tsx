@@ -73,7 +73,7 @@ type TabPrincipal = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis'
 function tabActiva(): TabPrincipal {
   const now = new Date();
   if (now >= new Date('2026-07-19T00:00:00Z')) return 'final';
-  if (now >= new Date('2026-07-14T19:00:00Z')) return 'semis';
+  if (now >= new Date('2026-07-12T11:00:00Z')) return 'semis';
   if (now >= new Date('2026-07-09T20:00:00Z')) return 'cuartos';
   if (now >= new Date('2026-07-04T00:00:00Z')) return 'octavos';
   if (now >= new Date('2026-06-28T00:00:00Z')) return 'dieciseisavos';
