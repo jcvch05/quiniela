@@ -41,6 +41,8 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<'overview' | 'participantes' | 'emails' | 'sistema'>('overview');
   const [enviandoMasivo, setEnviandoMasivo] = useState(false);
   const [resultadoMasivo, setResultadoMasivo] = useState<{ enviados: number; fallidos: number; total: number } | null>(null);
+  const [enviandoMasivoOct, setEnviandoMasivoOct] = useState(false);
+  const [resultadoMasivoOct, setResultadoMasivoOct] = useState<{ enviados: number; fallidos: number; total: number } | null>(null);
   // Resultado entry form
   const [selPartido, setSelPartido] = useState('');
   const [selGL, setSelGL] = useState('');
@@ -120,6 +122,22 @@ export default function DashboardPage() {
       else alert('Error: ' + (json.error ?? 'desconocido'));
     } catch { alert('Error de conexión'); }
     finally { setEnviandoMasivo(false); }
+  }
+
+  async function enviarEmailsMasivoOct() {
+    if (!confirm(`¿Enviar los pronósticos de 8vos de todos los participantes a tu correo?\nEsto puede tardar unos segundos.`)) return;
+    setEnviandoMasivoOct(true);
+    setResultadoMasivoOct(null);
+    try {
+      const res = await fetch('/api/admin/email-masivo-octavos', {
+        ...OPTS, method: 'POST',
+        headers: HEADERS,
+      });
+      const json = await res.json();
+      if (res.ok) setResultadoMasivoOct(json);
+      else alert('Error: ' + (json.error ?? 'desconocido'));
+    } catch { alert('Error de conexión'); }
+    finally { setEnviandoMasivoOct(false); }
   }
 
   async function borrarParticipante(id: string, nombre: string) {
@@ -433,6 +451,21 @@ export default function DashboardPage() {
                 <div className="mt-4 text-sm">
                   <p className="text-green-400 font-semibold">✅ Enviados: {resultadoMasivo.enviados} / {resultadoMasivo.total}</p>
                   {resultadoMasivo.fallidos > 0 && <p className="text-red-400">❌ Fallidos: {resultadoMasivo.fallidos}</p>}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-900 border border-white/10 rounded-2xl p-5">
+              <h2 className="font-bold mb-3">⚡ Envío masivo – Pronósticos 8vos</h2>
+              <p className="text-sm text-gray-400 mb-4">Envía los pronósticos de Octavos de Final de todos los participantes a tu correo para que los reenvíes manualmente.</p>
+              <button onClick={enviarEmailsMasivoOct} disabled={enviandoMasivoOct}
+                className="bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 text-black font-bold px-6 py-3 rounded-xl transition-colors">
+                {enviandoMasivoOct ? '⏳ Enviando...' : '⚡ Enviar pronósticos 8vos a mi correo'}
+              </button>
+              {resultadoMasivoOct && (
+                <div className="mt-4 text-sm">
+                  <p className="text-green-400 font-semibold">✅ Enviados: {resultadoMasivoOct.enviados} / {resultadoMasivoOct.total}</p>
+                  {resultadoMasivoOct.fallidos > 0 && <p className="text-red-400">❌ Fallidos: {resultadoMasivoOct.fallidos}</p>}
                 </div>
               )}
             </div>

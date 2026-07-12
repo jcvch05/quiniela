@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get('auth_token')?.value;
     const body = await req.json();
-    const { uid, nombre, telefono, email, pronosticosEspeciales, pronosticosGrupos } = body;
+    const { uid, docId: docIdOverride, nombre, telefono, email, pronosticosEspeciales, pronosticosGrupos, pronosticosDieciseisavos, pronosticosOctavos, pronosticosCuartos, pronosticosSemis } = body;
 
     if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 100)
       return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const docId = uid ?? `${Date.now()}-${nombre.toLowerCase().replace(/\s+/g, '-').slice(0, 30)}`;
+    const docId = docIdOverride ?? uid ?? `${Date.now()}-${nombre.toLowerCase().replace(/\s+/g, '-').slice(0, 30)}`;
 
     const data = {
       nombre: nombre.trim().slice(0, 100),
@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
       fechaRegistro: new Date().toISOString(),
       pronosticosEspeciales: pronosticosEspeciales ?? {},
       pronosticosGrupos: pronosticosGrupos ?? {},
+      ...(pronosticosDieciseisavos ? { pronosticosDieciseisavos } : {}),
+      ...(pronosticosOctavos ? { pronosticosOctavos } : {}),
+      ...(pronosticosCuartos ? { pronosticosCuartos } : {}),
+      ...(pronosticosSemis ? { pronosticosSemis } : {}),
       puntos: 0,
       desglose: { grupos: 0, octavos: 0, cuartos: 0, semis: 0, especiales: 0 },
     };

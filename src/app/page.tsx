@@ -26,17 +26,24 @@ const FASES = [
     href: '/pronosticos',
   },
   {
-    id: 'cuartos',
-    label: '🔥 FASE CUARTOS',
+    id: 'octavosPartidos',
+    label: '⚡ FASE 8VOS',
     abre: new Date('2026-07-04T01:00:00-04:00'),
-    cierra: new Date('2026-07-04T11:00:00-04:00'),
+    cierra: new Date('2026-07-04T14:00:00-04:00'),
     href: '/pronosticos',
   },
   {
-    id: 'semis',
+    id: 'cuartosPartidos',
+    label: '🔥 FASE CUARTOS',
+    abre: new Date('2026-07-08T11:00:00Z'),
+    cierra: new Date('2026-07-09T19:00:00Z'),
+    href: '/pronosticos',
+  },
+  {
+    id: 'semisPartidos',
     label: '🌟 FASE SEMIS',
-    abre: new Date('2026-07-14T01:00:00-04:00'),
-    cierra: new Date('2026-07-14T11:00:00-04:00'),
+    abre: new Date('2026-07-12T11:00:00Z'),   // 7:00 BOT sáb 12 jul
+    cierra: new Date('2026-07-14T18:00:00Z'), // 14:00 BOT mar 14 jul
     href: '/pronosticos',
   },
 ];
@@ -60,12 +67,23 @@ function formatDeadline(d: Date) {
   return d.toLocaleString('es-BO', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+// Bracket visible desde que terminan D14-D16 (≈ 04:00 BOT del sáb 4 jul = 08:00 UTC)
+const BRACKET_DESDE = new Date('2026-07-04T08:00:00Z');
+
 export default function Home() {
   const [faseInfo, setFaseInfo] = useState<ReturnType<typeof getFaseActual>>(null);
+  const [showBracket, setShowBracket] = useState(false);
 
   useEffect(() => {
     setFaseInfo(getFaseActual());
     const iv = setInterval(() => setFaseInfo(getFaseActual()), 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    const check = () => setShowBracket(new Date() >= BRACKET_DESDE);
+    check();
+    const iv = setInterval(check, 60_000);
     return () => clearInterval(iv);
   }, []);
 
@@ -127,9 +145,10 @@ export default function Home() {
               </>
             )}
             {faseInfo.estado === 'proxima' && (
-              <p className="text-sm font-semibold capitalize">
-                Abre: {formatDeadline(faseInfo.fase.abre)}
-              </p>
+              <div className="text-sm font-semibold space-y-0.5">
+                <p className="capitalize">Abre: {formatDeadline(faseInfo.fase.abre)}</p>
+                <p className="capitalize">Cierra: {formatDeadline(faseInfo.fase.cierra)}</p>
+              </div>
             )}
             {faseInfo.estado === 'cerrada' && (
               <p className="text-sm font-semibold">Apuestas cerradas</p>
@@ -154,10 +173,13 @@ export default function Home() {
             🎬 Resúmenes
           </Link>
 
-          <Link href="/pronosticos"
-            className="flex items-center justify-center gap-2 bg-transparent border-2 border-white/20 hover:bg-white/5 text-gray-300 font-semibold text-lg py-3 rounded-2xl transition-all">
-            🎯 Mis apuestas
-          </Link>
+          {showBracket && (
+            <Link href="/bracket"
+              className="flex items-center justify-center gap-2 bg-transparent border-2 border-yellow-500 hover:bg-yellow-900/30 text-yellow-400 font-bold text-xl py-4 rounded-2xl transition-all">
+              🏆 Bracket
+            </Link>
+          )}
+
         </div>
 
         {/* Footer */}

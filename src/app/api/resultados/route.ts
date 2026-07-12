@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     await createDocument('resultados', partidoId, dataToSave);
   }
 
-  // Recalcular puntos de todos los participantes
-  try { await recalcularTodos(); } catch { /* no bloquear si recalculo falla */ }
+  // Recalcular en segundo plano sin bloquear la respuesta (evita timeout en Vercel Hobby)
+  recalcularTodos().catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

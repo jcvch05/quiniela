@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/api/resultados-publicos',  // fixture público
   '/api/resultados',          // admin: cargar resultados (protegido por x-admin-password)
   '/resumenes',               // página pública de resúmenes de partidos
+  '/bracket',                 // bracket del torneo (público)
 ];
 
 export function middleware(req: NextRequest) {

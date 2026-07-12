@@ -13,6 +13,7 @@ async function firestoreRequest(path: string, method = 'GET', body?: object, tok
     headers,
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store',
+    next: { revalidate: 0 },
   });
   if (!res.ok) throw new Error(`Firestore error: ${res.status}`);
   return res.json();

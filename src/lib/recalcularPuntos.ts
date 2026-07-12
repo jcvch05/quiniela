@@ -1,7 +1,7 @@
 import { getCollection, updateDocument } from './firebase';
 
-// D01-D04 se jugaron antes de que abrieran los pronósticos, no cuentan para puntos
-const EXCLUIDOS_DIECISEISAVOS = new Set(['D01', 'D02', 'D03', 'D04']);
+// D01 y D04 sin apuestas; D02 y D03 tienen apuestas recuperadas
+const EXCLUIDOS_DIECISEISAVOS = new Set(['D01', 'D04']);
 
 function ptsGrupo(gl: number, gv: number, pl: number, pv: number): number {
   if (gl === pl && gv === pv) return 8;
@@ -23,6 +23,9 @@ interface Participante {
   id: string;
   pronosticosGrupos?: Record<string, Pred>;
   pronosticosDieciseisavos?: Record<string, Pred>;
+  pronosticosOctavos?: Record<string, Pred>;
+  pronosticosCuartos?: Record<string, Pred>;
+  pronosticosSemis?: Record<string, Pred>;
   desglose?: { especiales?: number; [k: string]: unknown };
 }
 
@@ -39,6 +42,7 @@ export async function recalcularTodos() {
   for (const p of participantes as Participante[]) {
     let ptsGrupos = 0;
     let ptsDieciseisavos = 0;
+    let ptsOctavos = 0;
 
     for (const [pid, pred] of Object.entries(p.pronosticosGrupos ?? {})) {
       const res = resMap[pid];
@@ -53,12 +57,32 @@ export async function recalcularTodos() {
       ptsDieciseisavos += ptsElim(res.golesLocal, res.golesVisitante, Number(pred.golesLocal), Number(pred.golesVisitante));
     }
 
+    for (const [pid, pred] of Object.entries(p.pronosticosOctavos ?? {})) {
+      const res = resMap[pid];
+      if (!res || res.golesLocal === undefined || res.golesVisitante === undefined) continue;
+      ptsOctavos += ptsElim(res.golesLocal, res.golesVisitante, Number(pred.golesLocal), Number(pred.golesVisitante));
+    }
+
+    let ptsCuartos = 0;
+    for (const [pid, pred] of Object.entries(p.pronosticosCuartos ?? {})) {
+      const res = resMap[pid];
+      if (!res || res.golesLocal === undefined || res.golesVisitante === undefined) continue;
+      ptsCuartos += ptsElim(res.golesLocal, res.golesVisitante, Number(pred.golesLocal), Number(pred.golesVisitante));
+    }
+
+    let ptsSemis = 0;
+    for (const [pid, pred] of Object.entries(p.pronosticosSemis ?? {})) {
+      const res = resMap[pid];
+      if (!res || res.golesLocal === undefined || res.golesVisitante === undefined) continue;
+      ptsSemis += ptsElim(res.golesLocal, res.golesVisitante, Number(pred.golesLocal), Number(pred.golesVisitante));
+    }
+
     const especiales = (p.desglose?.especiales ?? 0) as number;
-    const total = ptsGrupos + ptsDieciseisavos + especiales;
+    const total = ptsGrupos + ptsDieciseisavos + ptsOctavos + ptsCuartos + ptsSemis + especiales;
 
     await updateDocument('participantes', p.id, {
       puntos: total,
-      desglose: { grupos: ptsGrupos, dieciseisavos: ptsDieciseisavos, especiales },
+      desglose: { grupos: ptsGrupos, dieciseisavos: ptsDieciseisavos, octavos: ptsOctavos, cuartos: ptsCuartos, semis: ptsSemis, especiales },
     });
   }
 }

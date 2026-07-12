@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { PARTIDOS_DIECISEISAVOS, PARTIDOS_GRUPOS } from '@/lib/partidos';
+import { PARTIDOS_DIECISEISAVOS, PARTIDOS_GRUPOS, PARTIDOS_OCTAVOS, PARTIDOS_CUARTOS, PARTIDOS_SEMIS } from '@/lib/partidos';
 import { bandera } from '@/lib/banderas';
 
 interface Resultado {
@@ -20,6 +20,12 @@ function youtubeId(url: string): string | null {
 function getInfo(id: string) {
   const d = PARTIDOS_DIECISEISAVOS.find(p => p.id === id);
   if (d) return { local: d.local, visitante: d.visitante, fase: '16avos', grupo: null, ciudad: d.ciudad };
+  const o = PARTIDOS_OCTAVOS.find(p => p.id === id);
+  if (o) return { local: o.local, visitante: o.visitante, fase: 'octavos', grupo: null, ciudad: o.ciudad };
+  const q = PARTIDOS_CUARTOS.find(p => p.id === id);
+  if (q) return { local: q.local, visitante: q.visitante, fase: 'cuartos', grupo: null, ciudad: q.ciudad };
+  const s = PARTIDOS_SEMIS.find(p => p.id === id);
+  if (s) return { local: s.local, visitante: s.visitante, fase: 'semis', grupo: null, ciudad: s.ciudad };
   const g = PARTIDOS_GRUPOS.find(p => p.id === id);
   if (g) return { local: g.local, visitante: g.visitante, fase: 'grupos', grupo: g.grupo ?? null, ciudad: g.ciudad };
   return null;
@@ -62,12 +68,22 @@ function VideoCard({ r }: { r: Resultado }) {
 }
 
 const GRUPOS_LIST = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-type TabPrincipal = 'grupos' | 'dieciseisavos' | 'cuartos' | 'semis' | 'final';
+type TabPrincipal = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final';
+
+function tabActiva(): TabPrincipal {
+  const now = new Date();
+  if (now >= new Date('2026-07-19T00:00:00Z')) return 'final';
+  if (now >= new Date('2026-07-14T19:00:00Z')) return 'semis';
+  if (now >= new Date('2026-07-09T20:00:00Z')) return 'cuartos';
+  if (now >= new Date('2026-07-04T00:00:00Z')) return 'octavos';
+  if (now >= new Date('2026-06-28T00:00:00Z')) return 'dieciseisavos';
+  return 'grupos';
+}
 
 export default function ResumenesPage() {
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<TabPrincipal>('dieciseisavos');
+  const [tab, setTab] = useState<TabPrincipal>(tabActiva);
   const [grupoActivo, setGrupoActivo] = useState('A');
 
   useEffect(() => {
@@ -96,12 +112,14 @@ export default function ResumenesPage() {
   const TABS: { id: TabPrincipal; label: string; count: number }[] = [
     { id: 'grupos',        label: '📋 Grupos',  count: totalGrupos },
     { id: 'dieciseisavos', label: '⚔️ 16avos',  count: byGrupo['16avos']?.length ?? 0 },
-    { id: 'cuartos',       label: '🔥 8avos',   count: byGrupo['cuartos']?.length ?? 0 },
+    { id: 'octavos',       label: '⚡ 8vos',    count: byGrupo['octavos']?.length ?? 0 },
+    { id: 'cuartos',       label: '🔥 Cuartos', count: byGrupo['cuartos']?.length ?? 0 },
     { id: 'semis',         label: '🌟 Semis',   count: byGrupo['semis']?.length ?? 0 },
     { id: 'final',         label: '🏆 Final',   count: byGrupo['final']?.length ?? 0 },
-  ].filter(t => t.count > 0 || t.id === 'grupos' || t.id === 'dieciseisavos' || t.id === 'cuartos') as { id: TabPrincipal; label: string; count: number }[];
+  ].filter(t => t.count > 0 || t.id === 'grupos' || t.id === 'dieciseisavos' || t.id === 'octavos' || t.id === 'cuartos') as { id: TabPrincipal; label: string; count: number }[];
 
   const videos16 = byGrupo['16avos'] ?? [];
+  const videosOctavos = byGrupo['octavos'] ?? [];
   const videosCuartos = byGrupo['cuartos'] ?? [];
   const videosSemis = byGrupo['semis'] ?? [];
   const videosFinal = byGrupo['final'] ?? [];
@@ -170,6 +188,13 @@ export default function ResumenesPage() {
               videos16.length === 0
                 ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de 16avos.</p></div>
                 : <div className="space-y-5">{videos16.map(r => <VideoCard key={r.id} r={r} />)}</div>
+            )}
+
+            {/* ── OCTAVOS ── */}
+            {tab === 'octavos' && (
+              videosOctavos.length === 0
+                ? <div className="text-center py-16 text-gray-500"><div className="text-4xl mb-3">🎥</div><p>Aún no hay videos de 8vos.</p></div>
+                : <div className="space-y-5">{videosOctavos.map(r => <VideoCard key={r.id} r={r} />)}</div>
             )}
 
             {/* ── CUARTOS ── */}

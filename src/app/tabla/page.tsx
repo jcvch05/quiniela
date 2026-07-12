@@ -10,6 +10,7 @@ interface Entry {
   desglose: {
     grupos?: number;
     dieciseisavos?: number;
+    octavos?: number;
     cuartos?: number;
     semis?: number;
     especiales?: number;
@@ -104,8 +105,9 @@ export default function TablaPage() {
                     {[
                       { label: 'Grupos',    val: entry.desglose?.grupos,         show: true },
                       { label: '16avos',    val: entry.desglose?.dieciseisavos,  show: true },
-                      { label: 'Cuartos',   val: entry.desglose?.cuartos,        show: (entry.desglose?.cuartos ?? 0) > 0 },
-                      { label: 'Semis',     val: entry.desglose?.semis,          show: (entry.desglose?.semis ?? 0) > 0 },
+                      { label: '8vos',      val: entry.desglose?.octavos,        show: true },
+                      { label: '4tos',      val: entry.desglose?.cuartos,        show: true },
+                      { label: 'Semis',     val: entry.desglose?.semis,          show: true },
                       { label: 'Especiales',val: entry.desglose?.especiales,     show: true },
                     ].filter(f => f.show).map(f => (
                       <span key={f.label}>

@@ -5,6 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getSession, clearSession } from '@/lib/authService';
 
+// Bracket visible desde el sábado 4 jul 2026 00:00 BOT (= 04:00 UTC)
+const BRACKET_DESDE = new Date('2026-07-04T04:00:00Z');
+
 const links = [
   { href: '/',          label: '🏠 Inicio' },
   { href: '/tabla',     label: '🏆 Posiciones' },
@@ -18,6 +21,14 @@ export default function Nav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [userName, setUserName] = useState('');
+  const [showBracket, setShowBracket] = useState(false);
+
+  useEffect(() => {
+    const check = () => setShowBracket(new Date() >= BRACKET_DESDE);
+    check();
+    const iv = setInterval(check, 60_000);
+    return () => clearInterval(iv);
+  }, []);
 
   useEffect(() => {
     fetch('/api/auth/me', { cache: 'no-store' })
@@ -55,6 +66,16 @@ export default function Nav() {
                 {l.label}
               </Link>
             ))}
+            {showBracket && (
+              <Link href="/bracket"
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  pathname === '/bracket'
+                    ? 'bg-yellow-400 text-black'
+                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                }`}>
+                🏆 Bracket
+              </Link>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -85,6 +106,14 @@ export default function Nav() {
                 {l.label}
               </Link>
             ))}
+            {showBracket && (
+              <Link href="/bracket" onClick={() => setOpen(false)}
+                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  pathname === '/bracket' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:bg-white/10'
+                }`}>
+                🏆 Bracket
+              </Link>
+            )}
             <Link href="/pronosticos" onClick={() => setOpen(false)}
               className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-yellow-400 hover:bg-white/10">
               🎯 Mis apuestas

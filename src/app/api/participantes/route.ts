@@ -14,6 +14,9 @@ export async function GET() {
         pagado: p.pagado,
         pronosticosGrupos: p.pronosticosGrupos ?? {},
         pronosticosDieciseisavos: p.pronosticosDieciseisavos ?? {},
+        pronosticosOctavos: p.pronosticosOctavos ?? {},
+        pronosticosCuartos: p.pronosticosCuartos ?? {},
+        pronosticosSemis: p.pronosticosSemis ?? {},
       }))
       .filter((p: { pagado: unknown }) => p.pagado)
       .sort((a: { puntos: unknown }, b: { puntos: unknown }) => (b.puntos as number) - (a.puntos as number));

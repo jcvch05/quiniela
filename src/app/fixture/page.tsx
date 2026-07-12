@@ -1,28 +1,39 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS, PARTIDOS_OCTAVOS, PARTIDOS_CUARTOS, PARTIDOS_SEMIS } from '@/lib/partidos';
 import { bandera } from '@/lib/banderas';
 import { Partido } from '@/types';
 
 // ─── Partidos eliminatorias placeholder ──────────────────────────────────────
-const CUARTOS: Partido[] = Array.from({ length: 8 }, (_, i) => ({
-  id: `C${String(i + 1).padStart(2, '0')}`, fase: 'cuartos' as const,
-  local: `Por confirmar`, visitante: `Por confirmar`,
-  fecha: '2026-07-04', sede: 'Por confirmar', ciudad: '', jugado: false,
-}));
-const SEMIS: Partido[] = [
-  { id: 'S01', fase: 'semis', local: 'Por confirmar', visitante: 'Por confirmar', fecha: '2026-07-14T21:00', sede: 'MetLife Stadium', ciudad: 'Nueva York / NJ', jugado: false },
-  { id: 'S02', fase: 'semis', local: 'Por confirmar', visitante: 'Por confirmar', fecha: '2026-07-15T21:00', sede: 'AT&T Stadium', ciudad: 'Dallas', jugado: false },
-];
+const CUARTOS: Partido[] = PARTIDOS_CUARTOS.map(p => ({ ...p, fase: 'cuartos' as const, jugado: false }));
+const SEMIS: Partido[] = PARTIDOS_SEMIS.map(p => ({ ...p, fase: 'semis' as const, jugado: false }));
 const FINAL: Partido = { id: 'F01', fase: 'final', local: 'Por confirmar', visitante: 'Por confirmar', fecha: '2026-07-19T16:00', sede: 'MetLife Stadium', ciudad: 'Nueva York / NJ', jugado: false };
 
 const GRUPOS_LIST = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 const REFRESH = 30_000;
 
 function soloFecha(fecha: string) { return fecha.split('T')[0]; }
-function hora(fecha: string) { return fecha.includes('T') ? fecha.split('T')[1].slice(0,5) + ' BOT' : ''; }
+function hora(fecha: string) {
+  if (!fecha.includes('T')) return '';
+  // Si termina en Z es UTC → convertir a BOT (UTC-4)
+  if (fecha.endsWith('Z')) {
+    const d = new Date(fecha);
+    const h = d.getUTCHours() - 4;
+    const hBot = ((h % 24) + 24) % 24;
+    const m = d.getUTCMinutes();
+    return `${String(hBot).padStart(2,'0')}:${String(m).padStart(2,'0')} BOT`;
+  }
+  return fecha.split('T')[1].slice(0,5) + ' BOT';
+}
 function labelFecha(fecha: string) {
+  // Para fechas UTC usar la fecha BOT real
+  if (fecha.endsWith('Z')) {
+    const d = new Date(fecha);
+    // Ajustar a BOT
+    const bot = new Date(d.getTime() - 4 * 60 * 60 * 1000);
+    return bot.toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
   return new Date(soloFecha(fecha) + 'T12:00:00').toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
@@ -53,11 +64,11 @@ interface PredParticipante {
   pts: number;
 }
 
-function ptsPartido(gl: number, gv: number, pl: number, pv: number, es16: boolean): number {
-  const max = es16 ? 10 : 8;
-  if (gl === pl && gv === pv) return max;
-  if (gl - gv === pl - pv) return 5;
-  if (gl !== gv && (gl > gv) === (pl > pv)) return 3;
+function ptsPartido(gl: number, gv: number, pl: number | string, pv: number | string, esElim: boolean): number {
+  const PL = Number(pl), PV = Number(pv);
+  if (gl === PL && gv === PV) return esElim ? 10 : 8;
+  if (gl - gv === PL - PV) return 5;
+  if (gl !== gv && (gl > gv) === (PL > PV)) return 3;
   return 0;
 }
 
@@ -68,6 +79,10 @@ function PartidoCard({ p }: { p: Partido }) {
   const [loadingPreds, setLoadingPreds] = useState(false);
   const [cargado, setCargado] = useState(false);
   const es16 = p.id.startsWith('D');
+  const esOct = p.id.startsWith('O');
+  const esCuartos = p.id.startsWith('Q');
+  const esSemis = p.id.startsWith('S');
+  const esElim = es16 || esOct || esCuartos || esSemis;
   const jugado = p.jugado && p.golesLocal !== undefined;
 
   function toggle() {
@@ -77,11 +92,11 @@ function PartidoCard({ p }: { p: Partido }) {
         setLoadingPreds(true);
         fetch('/api/participantes', { cache: 'no-store' })
           .then(r => r.json())
-          .then((data: Array<{ nombre: string; pronosticosGrupos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosDieciseisavos?: Record<string,{golesLocal:number;golesVisitante:number}> }>) => {
-            const res = jugado ? { gl: p.golesLocal!, gv: p.golesVisitante! } : null;
+          .then((data: Array<{ nombre: string; pronosticosGrupos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosDieciseisavos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosOctavos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosCuartos?: Record<string,{golesLocal:number;golesVisitante:number}>; pronosticosSemis?: Record<string,{golesLocal:number;golesVisitante:number}> }>) => {
+            const res = jugado ? { gl: Number(p.golesLocal!), gv: Number(p.golesVisitante!) } : null;
             const items: PredParticipante[] = data.map(part => {
-              const pred = es16 ? part.pronosticosDieciseisavos?.[p.id] : part.pronosticosGrupos?.[p.id];
-              const pts = res && pred ? ptsPartido(res.gl, res.gv, pred.golesLocal, pred.golesVisitante, es16) : 0;
+              const pred = es16 ? part.pronosticosDieciseisavos?.[p.id] : esOct ? part.pronosticosOctavos?.[p.id] : esCuartos ? part.pronosticosCuartos?.[p.id] : esSemis ? part.pronosticosSemis?.[p.id] : part.pronosticosGrupos?.[p.id];
+              const pts = res && pred ? ptsPartido(res.gl, res.gv, Number(pred.golesLocal), Number(pred.golesVisitante), esElim) : 0;
               return { nombre: part.nombre, pred, pts };
             });
             items.sort((a, b) => b.pts - a.pts || (a.pred ? 0 : 1) - (b.pred ? 0 : 1));
@@ -120,33 +135,53 @@ function PartidoCard({ p }: { p: Partido }) {
         </div>
       </button>
 
-      {/* Apuestas desplegables */}
+      {/* Apuestas desplegables — formato tabla */}
       {abierto && (
-        <div className="border-t border-white/10 px-4 py-3 space-y-2">
-          <p className="text-xs text-gray-500 mb-2">
-            {jugado ? 'Apuestas vs resultado final' : 'Apuestas registradas'}
-          </p>
-          {loadingPreds && <p className="text-gray-400 text-sm text-center py-2">Cargando...</p>}
-          {!loadingPreds && preds.map(part => (
-            <div key={part.nombre} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
-              jugado && part.pred
-                ? part.pts >= (es16 ? 10 : 8) ? 'bg-yellow-900/30 border border-yellow-500/40'
-                : part.pts === 5 ? 'bg-blue-900/30 border border-blue-500/30'
-                : part.pts === 3 ? 'bg-green-900/20 border border-green-600/20'
-                : 'bg-white/3 border border-white/5'
-                : 'bg-white/5 border border-white/5'
-            }`}>
-              <span className="flex-1 text-sm font-semibold truncate">{part.nombre}</span>
-              {part.pred
-                ? <span className="font-black text-base">{part.pred.golesLocal} – {part.pred.golesVisitante}</span>
-                : <span className="text-gray-600 text-sm">Sin apuesta</span>}
-              {jugado && part.pred && (
-                <span className={`text-sm font-black w-8 text-right ${
-                  part.pts >= (es16 ? 10 : 8) ? 'text-yellow-400' : part.pts >= 5 ? 'text-blue-300' : part.pts >= 3 ? 'text-green-400' : 'text-gray-600'
-                }`}>+{part.pts}</span>
-              )}
-            </div>
-          ))}
+        <div className="border-t border-white/10">
+          {loadingPreds && <p className="text-gray-400 text-sm text-center py-3">Cargando...</p>}
+          {!loadingPreds && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-wide">
+                  <th className="text-left px-4 py-2">Participante</th>
+                  <th className="px-3 py-2 text-center">{p.local.split(' ').slice(-1)[0]}</th>
+                  <th className="px-3 py-2 text-center">{p.visitante.split(' ').slice(-1)[0]}</th>
+                  {jugado && <th className="px-3 py-2 text-center text-yellow-400">Pts</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {preds.map(part => {
+                  const rowColor = jugado && part.pred
+                    ? part.pts >= (esElim ? 10 : 8) ? 'bg-yellow-900/20'
+                    : part.pts === 5 ? 'bg-blue-900/20'
+                    : part.pts === 3 ? 'bg-green-900/10'
+                    : ''
+                    : '';
+                  return (
+                    <tr key={part.nombre} className={rowColor}>
+                      <td className="px-4 py-2.5 font-semibold truncate max-w-[140px]">{part.nombre}</td>
+                      <td className="px-3 py-2.5 text-center font-black text-base">
+                        {part.pred !== undefined ? part.pred.golesLocal : <span className="text-gray-600 text-xs">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-black text-base">
+                        {part.pred !== undefined ? part.pred.golesVisitante : <span className="text-gray-600 text-xs">—</span>}
+                      </td>
+                      {jugado && (
+                        <td className={`px-3 py-2.5 text-center font-black text-sm ${
+                          !part.pred ? 'text-gray-600' :
+                          part.pts >= (esElim ? 10 : 8) ? 'text-yellow-400' :
+                          part.pts === 5 ? 'text-blue-300' :
+                          part.pts === 3 ? 'text-green-400' : 'text-gray-500'
+                        }`}>
+                          {part.pred ? `+${part.pts}` : '—'}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>
@@ -190,18 +225,31 @@ function TablaGrupo({ partidos }: { partidos: Partido[] }) {
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
-type Vista = 'grupos' | 'dieciseisavos' | 'cuartos' | 'semis' | 'final';
+type Vista = 'grupos' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis' | 'final';
 
 const VISTAS: { id: Vista; label: string }[] = [
   { id: 'grupos',        label: '📊 Grupos' },
   { id: 'dieciseisavos', label: '⚔️ 16avos' },
+  { id: 'octavos',       label: '⚡ 8vos' },
   { id: 'cuartos',       label: '🔥 Cuartos' },
   { id: 'semis',         label: '🌟 Semis' },
   { id: 'final',         label: '🏆 Final' },
 ];
 
+// Retorna la pestaña activa según la fecha actual (BOT = UTC-4)
+// ACTUALIZAR cuando avancen las fases: cambiar las fechas de corte
+function vistaActiva(): Vista {
+  const now = new Date();
+  if (now >= new Date('2026-07-19T00:00:00Z')) return 'final';
+  if (now >= new Date('2026-07-12T11:00:00Z')) return 'semis';
+  if (now >= new Date('2026-07-08T11:00:00Z')) return 'cuartos';
+  if (now >= new Date('2026-07-04T00:00:00Z')) return 'octavos';
+  if (now >= new Date('2026-06-28T00:00:00Z')) return 'dieciseisavos';
+  return 'grupos';
+}
+
 export default function FixturePage() {
-  const [vista, setVista] = useState<Vista>('dieciseisavos');
+  const [vista, setVista] = useState<Vista>(vistaActiva);
   const [grupoActivo, setGrupoActivo] = useState('A');
   const [resultados, setResultados] = useState<Record<string, { golesLocal: number; golesVisitante: number; jugado?: boolean }>>({});
   const [countdown, setCountdown] = useState(REFRESH / 1000);
@@ -253,6 +301,7 @@ export default function FixturePage() {
 
   const partidosGrupo = enrichArr(gruposByLetter[grupoActivo] ?? []);
   const partidos16 = enrichArr(PARTIDOS_DIECISEISAVOS as unknown as Partido[]);
+  const partidosOct = enrichArr(PARTIDOS_OCTAVOS as unknown as Partido[]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-950 to-black text-white">
@@ -323,6 +372,22 @@ export default function FixturePage() {
             <div className="space-y-3">
               {partidos16.map(p => (
                 <PartidoCard key={p.id} p={p} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── 8VOS ── */}
+        {vista === 'octavos' && (
+          <>
+            <h2 className="text-2xl font-black text-cyan-400 mb-1">Octavos de Final</h2>
+            <p className="text-gray-400 text-sm mb-5">4–7 jul 2026 · Toca un partido para ver las apuestas</p>
+            <div className="space-y-3">
+              {partidosOct.map((p, i) => (
+                <div key={p.id}>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1.5 ml-1">Partido {i + 1}</p>
+                  <PartidoCard p={p} />
+                </div>
               ))}
             </div>
           </>

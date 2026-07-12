@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS, DEADLINE_DIECISEISAVOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS, PARTIDOS_OCTAVOS, PARTIDOS_CUARTOS, PARTIDOS_SEMIS, DEADLINE_DIECISEISAVOS } from '@/lib/partidos';
 import { SELECCIONES } from '@/types';
 import { getSession } from '@/lib/authService';
 
@@ -17,23 +17,33 @@ import { getDocument } from '@/lib/firebase';
 import ContadorGoles from '@/components/ContadorGoles';
 import { bandera, conBandera } from '@/lib/banderas';
 
-// Deadlines en hora Bolivia
-const DEADLINES = {
-  fase1:         new Date('2026-06-11T14:30:00-04:00'),
-  dieciseisavos: new Date(DEADLINE_DIECISEISAVOS),
-  octavos:       new Date('2026-06-29T11:00:00-04:00'),
-  cuartos:       new Date('2026-07-04T11:00:00-04:00'),
-  semis:         new Date('2026-07-14T11:00:00-04:00'),
+// Ventanas de apuesta (abre / cierra)
+const VENTANAS: Partial<Record<string, { abre: Date }>> = {
+  cuartosPartidos: { abre: new Date('2026-07-08T11:00:00Z') }, // 7:00 BOT miércoles 8 jul
+  semisPartidos:   { abre: new Date('2026-07-12T11:00:00Z') }, // 7:00 BOT sábado 12 jul
 };
 
-type Fase = 'fase1' | 'dieciseisavos' | 'octavos' | 'cuartos' | 'semis';
+// Deadlines en hora Bolivia
+const DEADLINES = {
+  fase1:            new Date('2026-06-11T14:30:00-04:00'),
+  dieciseisavos:    new Date(DEADLINE_DIECISEISAVOS),
+  octavosPartidos:  new Date('2026-07-04T14:00:00-04:00'),
+  octavos:          new Date('2026-06-29T11:00:00-04:00'),
+  cuartosPartidos:  new Date('2026-07-09T19:00:00Z'),
+  cuartos:          new Date('2026-07-04T11:00:00-04:00'),
+  semisPartidos:    new Date('2026-07-14T18:00:00Z'), // 14:00 BOT martes 14 jul
+  semis:            new Date('2026-07-14T11:00:00-04:00'),
+};
+
+type Fase = 'fase1' | 'dieciseisavos' | 'octavosPartidos' | 'octavos' | 'cuartosPartidos' | 'cuartos' | 'semisPartidos' | 'semis';
 
 const FASES = [
-  { id: 'fase1'          as Fase, label: '📋 Fase 1 – Grupos',    deadline: DEADLINES.fase1,         desc: 'Especiales + todos los partidos de grupos' },
-  { id: 'dieciseisavos'  as Fase, label: '⚔️ Fase 2 – 16avos',    deadline: DEADLINES.dieciseisavos, desc: 'Marcadores de los 16 partidos de octavos' },
-  { id: 'octavos'        as Fase, label: '🔥 Fase 3 – Cuartos',   deadline: DEADLINES.octavos,       desc: '8 equipos clasificados a cuartos' },
-  { id: 'cuartos'        as Fase, label: '💥 Fase 4 – Semis',     deadline: DEADLINES.cuartos,       desc: '4 equipos clasificados a semifinales' },
-  { id: 'semis'          as Fase, label: '🌟 Fase 5 – Final',     deadline: DEADLINES.semis,         desc: '2 equipos finalistas' },
+  { id: 'fase1'            as Fase, label: '📋 Fase 1 – Grupos',    deadline: DEADLINES.fase1,            desc: 'Especiales + todos los partidos de grupos' },
+  { id: 'dieciseisavos'    as Fase, label: '⚔️ Fase 2 – 16avos',    deadline: DEADLINES.dieciseisavos,    desc: 'Marcadores de los 16 partidos de dieciseisavos' },
+  { id: 'octavosPartidos'  as Fase, label: '⚡ Fase 3 – 8vos',      deadline: DEADLINES.octavosPartidos,  desc: 'Marcadores de los 8 partidos de octavos' },
+  { id: 'cuartosPartidos'  as Fase, label: '🔥 Fase 4 – Cuartos',   deadline: DEADLINES.cuartosPartidos,  desc: 'Marcadores de los 4 partidos de cuartos' },
+  { id: 'semisPartidos'    as Fase, label: '🌟 Fase 5 – Semis',     deadline: DEADLINES.semisPartidos,    desc: 'Marcadores de los 2 partidos de semifinales' },
+  { id: 'semis'            as Fase, label: '🏆 Fase 6 – Final',     deadline: DEADLINES.semis,            desc: '2 equipos finalistas' },
 ];
 
 const GRUPOS_LETRAS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
@@ -51,7 +61,12 @@ const TODOS_EQUIPOS = Array.from(new Set(PARTIDOS_GRUPOS.flatMap(p => [p.local, 
 
 interface FormFase1 { campeon: string; subcampeon: string; semi1: string; semi2: string; semi3: string; semi4: string; maxGoleador: string; [key: string]: string; }
 
-function faseAbierta(fase: Fase) { return new Date() < DEADLINES[fase]; }
+function faseAbierta(fase: Fase) {
+  const now = new Date();
+  const ventana = VENTANAS[fase];
+  if (ventana && now < ventana.abre) return false;
+  return now < DEADLINES[fase];
+}
 function formatDeadline(d: Date) {
   return d.toLocaleString('es-BO', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
@@ -71,7 +86,13 @@ async function enviarEmail(fase: string, email: string, nombre: string, datos: u
 }
 
 export default function PronosticosPage() {
-  const [faseActiva, setFaseActiva] = useState<Fase>('fase1');
+  const [faseActiva, setFaseActiva] = useState<Fase>(() => {
+    const abierta = FASES.find(f => faseAbierta(f.id));
+    if (abierta) return abierta.id;
+    // Si nada está abierto, mostrar la próxima con deadline en el futuro
+    const proxima = FASES.find(f => new Date() < DEADLINES[f.id]);
+    return proxima?.id ?? FASES[FASES.length - 1].id;
+  });
   const [session, setSession] = useState<{ uid: string; name: string; token: string; email: string } | null>(null);
   const [participante, setParticipante] = useState<Record<string, unknown> | null>(null);
   const [enviado, setEnviado] = useState<Partial<Record<Fase, boolean>>>({});
@@ -85,12 +106,23 @@ export default function PronosticosPage() {
       if (!s?.uid) { setLoading(false); return; }
       setSession(s);
       try {
-        const p = await getDocument('participantes', s.uid);
-        setParticipante(p as Record<string, unknown>);
+        let p: Record<string, unknown>;
+        try {
+          p = await getDocument('participantes', s.uid) as Record<string, unknown>;
+          if (!p.nombre) throw new Error('empty');
+        } catch {
+          // Fallback: buscar por uid field o nombre en el servidor
+          const res = await fetch(`/api/me-participante?uid=${encodeURIComponent(s.uid)}&nombre=${encodeURIComponent(s.name)}`);
+          p = res.ok ? (await res.json()) ?? {} : {};
+        }
+        setParticipante(p);
         const pp = p as Record<string, unknown>;
         const env: Partial<Record<Fase, boolean>> = {};
         if (pp.pronosticosGrupos && Object.keys(pp.pronosticosGrupos as object).length > 0) env.fase1 = true;
         if (pp.pronosticosDieciseisavos && Object.keys(pp.pronosticosDieciseisavos as object).length > 0) env.dieciseisavos = true;
+        if (pp.pronosticosOctavos && Object.keys(pp.pronosticosOctavos as object).length > 0) env.octavosPartidos = true;
+        if (pp.pronosticosCuartos && Object.keys(pp.pronosticosCuartos as object).length > 0) env.cuartosPartidos = true;
+        if (pp.pronosticosSemis && Object.keys(pp.pronosticosSemis as object).length > 0) env.semisPartidos = true;
         if (pp.octavos && (pp.octavos as string[]).length > 0) env.octavos = true;
         if (pp.cuartos && (pp.cuartos as string[]).length > 0) env.cuartos = true;
         if (pp.semis && (pp.semis as string[]).length > 0) env.semis = true;
@@ -150,6 +182,30 @@ export default function PronosticosPage() {
             participante={participante}
             yaEnviado={!!enviado.dieciseisavos}
             onEnviado={() => setEnviado(e => ({ ...e, dieciseisavos: true }))}
+          />
+        )}
+        {faseActiva === 'octavosPartidos' && (
+          <FaseOctavosPartidos
+            session={session}
+            participante={participante}
+            yaEnviado={!!enviado.octavosPartidos}
+            onEnviado={() => setEnviado(e => ({ ...e, octavosPartidos: true }))}
+          />
+        )}
+        {faseActiva === 'cuartosPartidos' && (
+          <FaseCuartosPartidos
+            session={session}
+            participante={participante}
+            yaEnviado={!!enviado.cuartosPartidos}
+            onEnviado={() => setEnviado(e => ({ ...e, cuartosPartidos: true }))}
+          />
+        )}
+        {faseActiva === 'semisPartidos' && (
+          <FaseSemisPartidos
+            session={session}
+            participante={participante}
+            yaEnviado={!!enviado.semisPartidos}
+            onEnviado={() => setEnviado(e => ({ ...e, semisPartidos: true }))}
           />
         )}
         {faseActiva === 'octavos' && (
@@ -247,6 +303,7 @@ function Fase1({ session, participante, yaEnviado, onEnviado }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uid: session.uid,
+          docId: participante?.id ?? undefined,
           nombre: participante?.nombre ?? session.name,
           telefono: participante?.telefono ?? '',
           email: session.email,
@@ -456,6 +513,7 @@ function FaseDieciseisavos({ session, participante, yaEnviado, onEnviado }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uid: session.uid,
+          docId: participante?.id ?? undefined,
           nombre: participante?.nombre ?? session.name,
           telefono: participante?.telefono ?? '',
           email: session.email,
@@ -559,6 +617,474 @@ function FaseDieciseisavos({ session, participante, yaEnviado, onEnviado }: {
         className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 disabled:opacity-40 text-black font-black py-4 rounded-2xl text-lg transition-all">
         {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos 16avos'}
       </button>
+    </div>
+  );
+}
+
+// ─── Fase 3: Octavos de final (marcadores) ───────────────────────────────────
+function FaseOctavosPartidos({ session, participante, yaEnviado, onEnviado }: {
+  session: { uid: string; name: string; token: string; email: string };
+  participante: Record<string, unknown> | null;
+  yaEnviado: boolean;
+  onEnviado: () => void;
+}) {
+  const abierta = faseAbierta('octavosPartidos');
+  const previos = participante?.pronosticosOctavos as Record<string, { golesLocal: number; golesVisitante: number }> | undefined;
+  const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(() =>
+    Object.fromEntries(PARTIDOS_OCTAVOS.map(p => [p.id, {
+      local: previos?.[p.id]?.golesLocal ?? 0,
+      visitante: previos?.[p.id]?.golesVisitante ?? 0,
+    }]))
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [guardado, setGuardado] = useState(false);
+  const [editando, setEditando] = useState(false);
+
+  function setGol(id: string, lado: 'local' | 'visitante', val: number) {
+    setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
+  }
+
+  async function enviar() {
+    setLoading(true); setError(''); setGuardado(false);
+    try {
+      const pronosticosOctavos: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+      for (const p of PARTIDOS_OCTAVOS) {
+        pronosticosOctavos[p.id] = { golesLocal: goles[p.id]?.local ?? 0, golesVisitante: goles[p.id]?.visitante ?? 0 };
+      }
+      const res = await fetch('/api/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: session.uid,
+          docId: participante?.id ?? undefined,
+          nombre: participante?.nombre ?? session.name,
+          telefono: participante?.telefono ?? '',
+          email: session.email,
+          pronosticosEspeciales: participante?.pronosticosEspeciales ?? {},
+          pronosticosGrupos: participante?.pronosticosGrupos ?? {},
+          pronosticosOctavos,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      await enviarEmail('octavosPartidos', session.email, session.name, { pronosticosOctavos });
+      setGuardado(true);
+      setTimeout(() => onEnviado(), 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar — intentá de nuevo');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (yaEnviado && previos && !editando) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-900/30 border border-green-600/40 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <h2 className="text-lg font-black text-green-400">Fase 3 enviada</h2>
+          <p className="text-gray-400 text-sm">Tus pronósticos para los 8vos están guardados.</p>
+          {abierta && (
+            <button onClick={() => setEditando(true)}
+              className="mt-3 text-xs text-yellow-400 underline underline-offset-2">
+              ✏️ Editar mis apuestas
+            </button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {PARTIDOS_OCTAVOS.map(p => {
+            const pred = previos[p.id];
+            return (
+              <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                  {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : '? - ?'}
+                </span>
+                <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (!abierta) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+          <div className="text-4xl mb-2">🔒</div>
+          <h2 className="text-lg font-bold text-gray-400">Fase cerrada</h2>
+          <p className="text-gray-500 text-sm">El plazo venció el <span className="capitalize">{formatDeadline(DEADLINES.octavosPartidos)}</span></p>
+        </div>
+        {previos && Object.keys(previos).length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-400 px-1">Tus pronósticos:</h3>
+            {PARTIDOS_OCTAVOS.map(p => {
+              const pred = previos[p.id];
+              return (
+                <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                  <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                  <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                    {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : <span className="text-gray-600">—</span>}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <DeadlineBanner deadline={DEADLINES.octavosPartidos} />
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
+        <h2 className="text-lg font-black text-cyan-400">⚡ Octavos de Final</h2>
+        <p className="text-sm text-gray-400">Ingresá el marcador final de cada partido (O01–O08).</p>
+        {PARTIDOS_OCTAVOS.map(p => (
+          <div key={p.id} className="bg-white/5 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-2">{p.id} · 📍 {p.ciudad}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold flex-1 text-right leading-tight">{bandera(p.local)} {p.local}</span>
+              <ContadorGoles value={goles[p.id]?.local ?? 0} onChange={v => setGol(p.id, 'local', v)} />
+              <span className="text-gray-500 font-black text-lg">-</span>
+              <ContadorGoles value={goles[p.id]?.visitante ?? 0} onChange={v => setGol(p.id, 'visitante', v)} />
+              <span className="text-sm font-semibold flex-1 leading-tight">{p.visitante} {bandera(p.visitante)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {error && <div className="bg-red-900/40 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm text-center">{error}</div>}
+      {guardado && (
+        <div className="bg-green-900/50 border border-green-500/60 rounded-xl px-4 py-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <p className="text-green-300 font-black text-lg">¡Pronósticos guardados!</p>
+          <p className="text-green-400/70 text-sm mt-1">Revisá tu email para ver el detalle.</p>
+        </div>
+      )}
+      {!guardado && (
+        <button onClick={enviar} disabled={loading}
+          className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 disabled:opacity-40 text-white font-black py-4 rounded-2xl text-lg transition-all">
+          {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos 8vos'}
+        </button>
+      )}
+      <p className="text-xs text-gray-500 text-center">Recibirás un email con tus pronósticos al enviar.</p>
+    </div>
+  );
+}
+
+// ─── Fase Cuartos Partidos ────────────────────────────────────────────────────
+function FaseCuartosPartidos({ session, participante, yaEnviado, onEnviado }: {
+  session: { uid: string; name: string; token: string; email: string };
+  participante: Record<string, unknown> | null;
+  yaEnviado: boolean;
+  onEnviado: () => void;
+}) {
+  const abierta = faseAbierta('cuartosPartidos');
+  const previos = participante?.pronosticosCuartos as Record<string, { golesLocal: number; golesVisitante: number }> | undefined;
+  const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(() =>
+    Object.fromEntries(PARTIDOS_CUARTOS.map(p => [p.id, {
+      local: previos?.[p.id]?.golesLocal ?? 0,
+      visitante: previos?.[p.id]?.golesVisitante ?? 0,
+    }]))
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [guardado, setGuardado] = useState(false);
+  const [editando, setEditando] = useState(false);
+
+  function setGol(id: string, lado: 'local' | 'visitante', val: number) {
+    setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
+  }
+
+  async function enviar() {
+    setLoading(true); setError(''); setGuardado(false);
+    try {
+      const pronosticosCuartos: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+      for (const p of PARTIDOS_CUARTOS) {
+        pronosticosCuartos[p.id] = { golesLocal: goles[p.id]?.local ?? 0, golesVisitante: goles[p.id]?.visitante ?? 0 };
+      }
+      const res = await fetch('/api/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: session.uid,
+          docId: participante?.id ?? undefined,
+          nombre: participante?.nombre ?? session.name,
+          telefono: participante?.telefono ?? '',
+          email: session.email,
+          pronosticosEspeciales: participante?.pronosticosEspeciales ?? {},
+          pronosticosGrupos: participante?.pronosticosGrupos ?? {},
+          pronosticosCuartos,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      await enviarEmail('cuartosPartidos', session.email, session.name, { pronosticosCuartos });
+      setGuardado(true);
+      setTimeout(() => onEnviado(), 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar — intentá de nuevo');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (yaEnviado && previos && !editando) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-900/30 border border-green-600/40 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <h2 className="text-lg font-black text-green-400">Cuartos enviados ✅</h2>
+          <p className="text-gray-400 text-sm">Tus pronósticos para cuartos están guardados.</p>
+          {abierta && (
+            <button onClick={() => setEditando(true)}
+              className="mt-3 text-xs text-yellow-400 underline underline-offset-2">
+              ✏️ Editar mis apuestas
+            </button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {PARTIDOS_CUARTOS.map(p => {
+            const pred = previos[p.id];
+            return (
+              <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                  {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : '? - ?'}
+                </span>
+                <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (!abierta) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+          <div className="text-4xl mb-2">🔒</div>
+          <h2 className="text-lg font-bold text-gray-400">Fase cerrada</h2>
+          <p className="text-gray-500 text-sm">El plazo venció el <span className="capitalize">{formatDeadline(DEADLINES.cuartosPartidos)}</span></p>
+        </div>
+        {previos && Object.keys(previos).length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-400 px-1">Tus pronósticos:</h3>
+            {PARTIDOS_CUARTOS.map(p => {
+              const pred = previos[p.id];
+              return (
+                <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                  <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                  <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                    {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : <span className="text-gray-600">—</span>}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <DeadlineBanner deadline={DEADLINES.cuartosPartidos} />
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
+        <h2 className="text-lg font-black text-orange-400">🔥 Cuartos de Final</h2>
+        <p className="text-sm text-gray-400">Ingresá el marcador final de cada partido (Q1–Q4).</p>
+        {PARTIDOS_CUARTOS.map(p => (
+          <div key={p.id} className="bg-white/5 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-2">{p.id} · 📍 {p.ciudad}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold flex-1 text-right leading-tight">{bandera(p.local)} {p.local}</span>
+              <ContadorGoles value={goles[p.id]?.local ?? 0} onChange={v => setGol(p.id, 'local', v)} />
+              <span className="text-gray-500 font-black text-lg">-</span>
+              <ContadorGoles value={goles[p.id]?.visitante ?? 0} onChange={v => setGol(p.id, 'visitante', v)} />
+              <span className="text-sm font-semibold flex-1 leading-tight">{p.visitante} {bandera(p.visitante)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {error && <div className="bg-red-900/40 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm text-center">{error}</div>}
+      {guardado && (
+        <div className="bg-green-900/50 border border-green-500/60 rounded-xl px-4 py-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <p className="text-green-300 font-black text-lg">¡Pronósticos guardados!</p>
+          <p className="text-green-400/70 text-sm mt-1">Revisá tu email para ver el detalle.</p>
+        </div>
+      )}
+      {!guardado && (
+        <button onClick={enviar} disabled={loading}
+          className="w-full bg-gradient-to-r from-orange-500 to-red-500 disabled:opacity-40 text-white font-black py-4 rounded-2xl text-lg transition-all">
+          {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos cuartos'}
+        </button>
+      )}
+      <p className="text-xs text-gray-500 text-center">Recibirás un email con tus pronósticos al enviar.</p>
+    </div>
+  );
+}
+
+// ─── Fase Semis Partidos ──────────────────────────────────────────────────────
+function FaseSemisPartidos({ session, participante, yaEnviado, onEnviado }: {
+  session: { uid: string; name: string; token: string; email: string };
+  participante: Record<string, unknown> | null;
+  yaEnviado: boolean;
+  onEnviado: () => void;
+}) {
+  const abierta = faseAbierta('semisPartidos');
+  const previos = participante?.pronosticosSemis as Record<string, { golesLocal: number; golesVisitante: number }> | undefined;
+  const [goles, setGoles] = useState<Record<string, { local: number; visitante: number }>>(() =>
+    Object.fromEntries(PARTIDOS_SEMIS.map(p => [p.id, {
+      local: previos?.[p.id]?.golesLocal ?? 0,
+      visitante: previos?.[p.id]?.golesVisitante ?? 0,
+    }]))
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [guardado, setGuardado] = useState(false);
+  const [editando, setEditando] = useState(false);
+
+  function setGol(id: string, lado: 'local' | 'visitante', val: number) {
+    setGoles(prev => ({ ...prev, [id]: { ...prev[id], [lado]: val } }));
+  }
+
+  async function enviar() {
+    setLoading(true); setError(''); setGuardado(false);
+    try {
+      const pronosticosSemis: Record<string, { golesLocal: number; golesVisitante: number }> = {};
+      for (const p of PARTIDOS_SEMIS) {
+        pronosticosSemis[p.id] = { golesLocal: goles[p.id]?.local ?? 0, golesVisitante: goles[p.id]?.visitante ?? 0 };
+      }
+      const res = await fetch('/api/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: session.uid,
+          docId: participante?.id ?? undefined,
+          nombre: participante?.nombre ?? session.name,
+          telefono: participante?.telefono ?? '',
+          email: session.email,
+          pronosticosEspeciales: participante?.pronosticosEspeciales ?? {},
+          pronosticosGrupos: participante?.pronosticosGrupos ?? {},
+          pronosticosSemis,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      await enviarEmail('semisPartidos', session.email, session.name, { pronosticosSemis });
+      setGuardado(true);
+      setTimeout(() => onEnviado(), 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar — intentá de nuevo');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (yaEnviado && previos && !editando) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-900/30 border border-green-600/40 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <h2 className="text-lg font-black text-green-400">Semis enviadas ✅</h2>
+          <p className="text-gray-400 text-sm">Tus pronósticos para semis están guardados.</p>
+          {abierta && (
+            <button onClick={() => setEditando(true)} className="mt-3 text-xs text-yellow-400 underline underline-offset-2">✏️ Editar mis apuestas</button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {PARTIDOS_SEMIS.map(p => {
+            const pred = previos[p.id];
+            return (
+              <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                  {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : '? - ?'}
+                </span>
+                <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (!abierta) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+          <div className="text-4xl mb-2">🔒</div>
+          <h2 className="text-lg font-bold text-gray-400">Fase cerrada</h2>
+          <p className="text-gray-500 text-sm">El plazo venció el <span className="capitalize">{formatDeadline(DEADLINES.semisPartidos)}</span></p>
+        </div>
+        {previos && Object.keys(previos).length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-400 px-1">Tus pronósticos:</h3>
+            {PARTIDOS_SEMIS.map(p => {
+              const pred = previos[p.id];
+              return (
+                <div key={p.id} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-8">{p.id}</span>
+                  <span className="flex-1 text-sm text-right font-semibold">{bandera(p.local)} {p.local}</span>
+                  <span className="text-yellow-400 font-black text-lg w-16 text-center">
+                    {pred ? `${pred.golesLocal} - ${pred.golesVisitante}` : <span className="text-gray-600">—</span>}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold">{p.visitante} {bandera(p.visitante)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <DeadlineBanner deadline={DEADLINES.semisPartidos} />
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
+        <h2 className="text-lg font-black text-purple-400">🌟 Semifinales</h2>
+        <p className="text-sm text-gray-400">Ingresá el marcador final de cada partido (S1–S2).</p>
+        {PARTIDOS_SEMIS.map(p => (
+          <div key={p.id} className="bg-white/5 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-2">{p.id} · 📍 {p.ciudad}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold flex-1 text-right leading-tight">{bandera(p.local)} {p.local}</span>
+              <ContadorGoles value={goles[p.id]?.local ?? 0} onChange={v => setGol(p.id, 'local', v)} />
+              <span className="text-gray-500 font-black text-lg">-</span>
+              <ContadorGoles value={goles[p.id]?.visitante ?? 0} onChange={v => setGol(p.id, 'visitante', v)} />
+              <span className="text-sm font-semibold flex-1 leading-tight">{p.visitante} {bandera(p.visitante)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {error && <div className="bg-red-900/40 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm text-center">{error}</div>}
+      {guardado && (
+        <div className="bg-green-900/50 border border-green-500/60 rounded-xl px-4 py-4 text-center">
+          <div className="text-3xl mb-1">✅</div>
+          <p className="text-green-300 font-black text-lg">¡Pronósticos guardados!</p>
+          <p className="text-green-400/70 text-sm mt-1">Revisá tu email para ver el detalle.</p>
+        </div>
+      )}
+      {!guardado && (
+        <button onClick={enviar} disabled={loading}
+          className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 disabled:opacity-40 text-white font-black py-4 rounded-2xl text-lg transition-all">
+          {loading ? '⏳ Guardando...' : '✅ Enviar pronósticos semis'}
+        </button>
+      )}
+      <p className="text-xs text-gray-500 text-center">Recibirás un email con tus pronósticos al enviar.</p>
     </div>
   );
 }
