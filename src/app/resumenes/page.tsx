@@ -116,7 +116,7 @@ export default function ResumenesPage() {
     { id: 'cuartos',       label: '🔥 Cuartos', count: byGrupo['cuartos']?.length ?? 0 },
     { id: 'semis',         label: '🌟 Semis',   count: byGrupo['semis']?.length ?? 0 },
     { id: 'final',         label: '🏆 Final',   count: byGrupo['final']?.length ?? 0 },
-  ].filter(t => t.count > 0 || t.id === 'grupos' || t.id === 'dieciseisavos' || t.id === 'octavos' || t.id === 'cuartos') as { id: TabPrincipal; label: string; count: number }[];
+  ].filter(t => t.count > 0 || t.id === 'grupos' || t.id === 'dieciseisavos' || t.id === 'octavos' || t.id === 'cuartos' || t.id === 'semis') as { id: TabPrincipal; label: string; count: number }[];
 
   const videos16 = byGrupo['16avos'] ?? [];
   const videosOctavos = byGrupo['octavos'] ?? [];
