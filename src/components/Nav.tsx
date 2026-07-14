@@ -21,7 +21,9 @@ export default function Nav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [showBracket, setShowBracket] = useState(false);
+  const ADMIN_EMAIL = 'jcarlos.vilaseca10@gmail.com';
 
   useEffect(() => {
     const check = () => setShowBracket(new Date() >= BRACKET_DESDE);
@@ -35,6 +37,7 @@ export default function Nav() {
       .then(r => r.json())
       .then(({ user }) => {
         if (user?.name) setUserName(user.name);
+        if (user?.email) setUserEmail(user.email);
         else { const s = getSession(); if (s?.name) setUserName(s.name); }
       })
       .catch(() => { const s = getSession(); if (s?.name) setUserName(s.name); });
@@ -80,6 +83,16 @@ export default function Nav() {
 
           <div className="hidden md:flex items-center gap-3">
             {userName && <span className="text-xs text-gray-400">👤 {userName.split(' ')[0]}</span>}
+            {userEmail === ADMIN_EMAIL && (
+              <Link href="/admin"
+                className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-semibold border ${
+                  pathname === '/admin'
+                    ? 'bg-orange-400 text-black border-orange-400'
+                    : 'bg-orange-400/10 hover:bg-orange-400/20 text-orange-400 border-orange-400/30'
+                }`}>
+                ⚙️ Admin
+              </Link>
+            )}
             <Link href="/pronosticos" className="text-xs bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 px-3 py-1.5 rounded-lg transition-colors font-semibold">
               🎯 Mis apuestas
             </Link>
@@ -118,6 +131,12 @@ export default function Nav() {
               className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-yellow-400 hover:bg-white/10">
               🎯 Mis apuestas
             </Link>
+            {userEmail === ADMIN_EMAIL && (
+              <Link href="/admin" onClick={() => setOpen(false)}
+                className="block px-4 py-2.5 rounded-lg text-sm font-semibold text-orange-400 hover:bg-white/10">
+                ⚙️ Admin
+              </Link>
+            )}
             {userName && <p className="px-4 py-2 text-xs text-gray-500">👤 {userName}</p>}
             <button onClick={logout}
               className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 rounded-lg transition-colors">
