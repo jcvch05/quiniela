@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PARTIDOS_GRUPOS } from '@/lib/partidos';
+import { PARTIDOS_GRUPOS, PARTIDOS_DIECISEISAVOS, PARTIDOS_OCTAVOS, PARTIDOS_CUARTOS, PARTIDOS_SEMIS } from '@/lib/partidos';
 
 interface Participante {
   id: string;
@@ -142,12 +142,45 @@ export default function AdminPage() {
   );
 }
 
+const FASES_ADMIN = [
+  { label: '📋 Grupos',  partidos: PARTIDOS_GRUPOS.map(p => ({ id: p.id, local: p.local, visitante: p.visitante, desc: `Grupo ${p.grupo}` })) },
+  { label: '⚔️ 16avos',  partidos: PARTIDOS_DIECISEISAVOS.map(p => ({ id: p.id, local: p.local, visitante: p.visitante, desc: p.ciudad })) },
+  { label: '⚡ 8vos',    partidos: PARTIDOS_OCTAVOS.map(p => ({ id: p.id, local: p.local, visitante: p.visitante, desc: p.ciudad })) },
+  { label: '🔥 Cuartos', partidos: PARTIDOS_CUARTOS.map(p => ({ id: p.id, local: p.local, visitante: p.visitante, desc: p.ciudad })) },
+  { label: '🌟 Semis',   partidos: PARTIDOS_SEMIS.map(p => ({ id: p.id, local: p.local, visitante: p.visitante, desc: p.ciudad })) },
+  { label: '🏆 Final',   partidos: [{ id: 'F1', local: 'Por definir', visitante: 'Por definir', desc: 'MetLife Stadium' }] },
+];
+
 function CargarResultados({ password }: { password: string }) {
+  const [fase, setFase] = useState(0);
   const [partidoId, setPartidoId] = useState('');
   const [gl, setGl] = useState('0');
   const [gv, setGv] = useState('0');
+  const [video, setVideo] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resultados, setResultados] = useState<Record<string, { golesLocal?: number; golesVisitante?: number; video?: string }>>({});
+
+  useEffect(() => {
+    fetch('/api/resultados-publicos').then(r => r.json()).then((data: { id: string; golesLocal?: number; golesVisitante?: number; video?: string }[]) => {
+      const map: Record<string, { golesLocal?: number; golesVisitante?: number; video?: string }> = {};
+      data.forEach(r => { map[r.id] = r; });
+      setResultados(map);
+    }).catch(() => {});
+  }, []);
+
+  const partidosFase = FASES_ADMIN[fase].partidos;
+  const partido = partidosFase.find(p => p.id === partidoId);
+  const resActual = partido ? resultados[partido.id] : undefined;
+
+  function seleccionarPartido(id: string) {
+    setPartidoId(id);
+    const r = resultados[id];
+    setGl(r?.golesLocal != null ? String(r.golesLocal) : '0');
+    setGv(r?.golesVisitante != null ? String(r.golesVisitante) : '0');
+    setVideo(r?.video ?? '');
+    setMsg('');
+  }
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
@@ -157,13 +190,11 @@ function CargarResultados({ password }: { password: string }) {
       const res = await fetch('/api/resultados', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-        body: JSON.stringify({ partidoId, golesLocal: parseInt(gl), golesVisitante: parseInt(gv) }),
+        body: JSON.stringify({ partidoId, golesLocal: parseInt(gl), golesVisitante: parseInt(gv), video: video.trim() || undefined }),
       });
       if (res.ok) {
-        setMsg('✅ Resultado guardado y puntos recalculados');
-        setPartidoId('');
-        setGl('0');
-        setGv('0');
+        setMsg('✅ Guardado y puntos recalculados');
+        setResultados(prev => ({ ...prev, [partidoId]: { golesLocal: parseInt(gl), golesVisitante: parseInt(gv), video: video.trim() || undefined } }));
       } else {
         setMsg('❌ Error al guardar');
       }
@@ -172,50 +203,78 @@ function CargarResultados({ password }: { password: string }) {
     }
   }
 
-  const partido = PARTIDOS_GRUPOS.find(p => p.id === partidoId);
-
   return (
     <div className="mt-10 bg-white/5 border border-white/10 rounded-2xl p-6">
-      <h2 className="text-lg font-bold text-yellow-400 mb-4">⚽ Cargar Resultado de Partido</h2>
-      <form onSubmit={guardar} className="space-y-4">
-        <div>
-          <label className="block text-sm text-gray-300 mb-1">Partido</label>
-          <select value={partidoId} onChange={e => setPartidoId(e.target.value)}
-            className="w-full bg-green-950 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-400">
-            <option value="">Selecciona un partido...</option>
-            {PARTIDOS_GRUPOS.map(p => (
-              <option key={p.id} value={p.id}>
-                Grupo {p.grupo} · {p.local} vs {p.visitante}
-              </option>
-            ))}
-          </select>
-        </div>
+      <h2 className="text-lg font-bold text-yellow-400 mb-4">⚽ Cargar Resultado + Video</h2>
 
-        {partido && (
+      {/* Tabs de fase */}
+      <div className="flex gap-2 flex-wrap mb-4">
+        {FASES_ADMIN.map((f, i) => (
+          <button key={i} onClick={() => { setFase(i); setPartidoId(''); setMsg(''); }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${fase === i ? 'bg-yellow-400 text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Lista de partidos de la fase */}
+      <div className="grid grid-cols-1 gap-2 mb-5">
+        {partidosFase.map(p => {
+          const r = resultados[p.id];
+          const jugado = r?.golesLocal != null;
+          return (
+            <button key={p.id} onClick={() => seleccionarPartido(p.id)}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-colors ${
+                partidoId === p.id ? 'border-yellow-400 bg-yellow-400/10' :
+                jugado ? 'border-green-600/40 bg-green-900/20 hover:bg-green-900/30' :
+                'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}>
+              <span className="font-semibold">{p.id} · {p.local} vs {p.visitante}</span>
+              <span className="text-xs ml-2">
+                {jugado ? <span className="text-green-400 font-black">{r.golesLocal} – {r.golesVisitante} {r.video ? '🎬' : ''}</span>
+                        : <span className="text-gray-500">Sin resultado</span>}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Formulario */}
+      {partido && (
+        <form onSubmit={guardar} className="space-y-4 border-t border-white/10 pt-4">
+          <p className="text-sm text-gray-400 text-center">{partido.desc}</p>
           <div className="flex items-center gap-4">
             <div className="flex-1 text-right">
               <p className="text-sm font-semibold">{partido.local}</p>
               <input type="number" min="0" max="20" value={gl} onChange={e => setGl(e.target.value)}
                 className="w-20 mt-1 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white text-xl font-black focus:outline-none focus:border-yellow-400 ml-auto block" />
             </div>
-            <span className="text-gray-500 font-black text-xl">-</span>
-            <div className="flex-1 text-left">
+            <span className="text-gray-500 font-black text-2xl">–</span>
+            <div className="flex-1">
               <p className="text-sm font-semibold">{partido.visitante}</p>
               <input type="number" min="0" max="20" value={gv} onChange={e => setGv(e.target.value)}
                 className="w-20 mt-1 text-center bg-white/10 border border-white/20 rounded-lg py-2 text-white text-xl font-black focus:outline-none focus:border-yellow-400" />
             </div>
           </div>
-        )}
 
-        {msg && <p className="text-sm text-center">{msg}</p>}
+          <div>
+            <label className="block text-sm text-gray-300 mb-1">🎬 URL del video (YouTube) — opcional</label>
+            <input type="url" value={video} onChange={e => setVideo(e.target.value)}
+              placeholder="https://youtu.be/..."
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" />
+          </div>
 
-        <button type="submit" disabled={!partidoId || loading}
-          className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl transition-colors">
-          {loading ? 'Guardando y recalculando...' : 'Guardar resultado'}
-        </button>
-      </form>
+          {msg && <p className="text-sm text-center">{msg}</p>}
+
+          <button type="submit" disabled={loading}
+            className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-bold py-3 rounded-xl transition-colors">
+            {loading ? 'Guardando...' : 'Guardar resultado y recalcular puntos'}
+          </button>
+        </form>
+      )}
+
       <p className="text-xs text-gray-500 mt-3 text-center">
-        Al guardar, se recalculan automáticamente los puntos de todos los participantes y se actualiza la tabla.
+        Al guardar se recalculan los puntos de todos los participantes automáticamente.
       </p>
     </div>
   );
