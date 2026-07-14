@@ -17,6 +17,11 @@ interface Participante {
     semifinalistas: string[];
     maxGoleador: string;
   };
+  pronosticosGrupos?: Record<string, unknown>;
+  pronosticosDieciseisavos?: Record<string, unknown>;
+  pronosticosOctavos?: Record<string, unknown>;
+  pronosticosCuartos?: Record<string, unknown>;
+  pronosticosSemis?: Record<string, unknown>;
 }
 
 export default function AdminPage() {
@@ -111,6 +116,9 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Participación por fase */}
+        <ParticipacionFases participantes={participantes} />
 
         {/* Lista pendientes */}
         {pendientes.length > 0 && (
@@ -276,6 +284,61 @@ function CargarResultados({ password }: { password: string }) {
       <p className="text-xs text-gray-500 mt-3 text-center">
         Al guardar se recalculan los puntos de todos los participantes automáticamente.
       </p>
+    </div>
+  );
+}
+
+const FASES_CHECK = [
+  { key: 'pronosticosGrupos',       label: 'Grupos',   min: 48 },
+  { key: 'pronosticosDieciseisavos',label: '16avos',   min: 8 },
+  { key: 'pronosticosOctavos',      label: '8vos',     min: 8 },
+  { key: 'pronosticosCuartos',      label: 'Cuartos',  min: 4 },
+  { key: 'pronosticosSemis',        label: 'Semis',    min: 2 },
+];
+
+function ParticipacionFases({ participantes }: { participantes: Participante[] }) {
+  const pagados = participantes.filter(p => p.pagado);
+
+  return (
+    <div className="mb-8 bg-white/5 border border-white/10 rounded-2xl p-5">
+      <h2 className="text-lg font-bold text-blue-300 mb-4">📊 Participación por fase</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-gray-400 border-b border-white/10">
+              <th className="pb-2 pr-4 font-semibold">Participante</th>
+              {FASES_CHECK.map(f => (
+                <th key={f.key} className="pb-2 px-2 text-center font-semibold whitespace-nowrap">{f.label}</th>
+              ))}
+              <th className="pb-2 pl-2 text-center font-semibold">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pagados.map(p => (
+              <tr key={p.id} className="border-b border-white/5 hover:bg-white/5">
+                <td className="py-2 pr-4 font-medium truncate max-w-[140px]">{p.nombre.split(' ')[0]}</td>
+                {FASES_CHECK.map(f => {
+                  const campo = p[f.key as keyof Participante] as Record<string, unknown> | undefined;
+                  const count = campo ? Object.keys(campo).length : 0;
+                  const ok = count >= f.min;
+                  const parcial = count > 0 && !ok;
+                  return (
+                    <td key={f.key} className="py-2 px-2 text-center">
+                      {ok
+                        ? <span title={`${count} apuestas`} className="text-green-400 text-base">✅</span>
+                        : parcial
+                        ? <span title={`Solo ${count}/${f.min}`} className="text-yellow-400 text-base">⚠️</span>
+                        : <span className="text-red-500 text-base">❌</span>}
+                    </td>
+                  );
+                })}
+                <td className="py-2 pl-2 text-center font-black text-yellow-400">{p.puntos ?? 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-gray-500 mt-3">✅ Completo · ⚠️ Parcial · ❌ Sin apuesta</p>
     </div>
   );
 }
