@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCollection, updateDocument, createDocument, getDocument } from '@/lib/firebase';
 import { recalcularTodos } from '@/lib/recalcularPuntos';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Vilaseca@2026';
 
 function checkAuth(req: NextRequest) {
   return req.headers.get('x-admin-password') === ADMIN_PASSWORD;

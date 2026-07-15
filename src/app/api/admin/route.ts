@@ -3,7 +3,7 @@ import { getCollection, updateDocument } from '@/lib/firebase';
 
 const FIREBASE_BASE = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Vilaseca@2026';
 
 function checkAuth(req: NextRequest) {
   const auth = req.headers.get('x-admin-password');

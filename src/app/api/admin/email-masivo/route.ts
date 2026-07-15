@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { getCollection, createDocument } from '@/lib/firebase';
 import { PARTIDOS_GRUPOS } from '@/lib/partidos';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Vilaseca@2026';
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Quiniela Vilaseca <onboarding@resend.dev>';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'jcarlos.vilaseca10@gmail.com';
 

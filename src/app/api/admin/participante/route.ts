@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'vilaseca2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Vilaseca@2026';
 const FIREBASE_BASE = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 
 function checkAuth(req: NextRequest) {
